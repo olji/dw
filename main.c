@@ -12,19 +12,13 @@ const char *argp_program_bug_address = "<N/A>";
 
 static char doc[] = "dw - Diceware manager";
 
+
+static char args_doc[] = "";
+
 struct arguments {
     enum {GEN = 0, LOOK, CREATE, IMPORT} mode;
     char *args[2];
 } arguments;
-
-static char args_doc[] = "";
-
-static struct argp_option options[] = {
-    { "generate", 'g', "TABLE", 1, "Generate a passphrase using TABLE, uses $DW_DEF_TABLE if no table is provided" },
-    { "lookup", 'l', "TABLE, ID", 1, "Look up passphrase using TABLE, uses $DW_DEF_TABLE" },
-    { "import-table", 'i', "NAME, INPUTFILE", 0, "Import diceware table into $DW_HOME/tables/NAME" },
-    { "create-table", 'c', "NAME, INPUTFILE", 0, "Create a new diceware table in $DW_HOME/tables/NAME" }
-};
 
 static error_t parse_opt (int key, char *arg, struct argp_state *state){
     switch (key){
@@ -44,19 +38,26 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
         return ARGP_ERR_UNKNOWN;
     }
     if (arg != NULL){
-        arguments.args[1] = arg;
+        arguments.args[0] = arg;
     }
     return 0;
 }
 
-static struct argp argp = {options, parse_opt, args_doc, doc};
-
 int main(int argc, char** argv){
+    static struct argp_option options[] = {
+        { "generate", 'g', "TABLE", OPTION_ARG_OPTIONAL, "Generate a passphrase using TABLE", 1 },
+        { "lookup", 'l', "TABLE", OPTION_ARG_OPTIONAL, "Look up passphrase using TABLE", 1 },
+        { "import-table", 'i', "FILE", 0, "Import diceware table", 0 },
+        { "create-table", 'c', "FILE", 0, "Create a new diceware table", 0 }
+    };
+
+    static struct argp argp = {options, parse_opt, args_doc, doc};
+
     if (argc < 2){
-        printf("No option given, nothing will be done.\n");
-        argp_help(&argp, stdout, ARGP_HELP_LONG, "dw");
+        printf("No function asked for, use --usage or --help for available options.\n");
         return 0;
     }
+
     struct arguments input_args;
     argp_parse (&argp, argc, argv, 0, 0, &input_args);
     char* home = getenv("DW_HOME");
