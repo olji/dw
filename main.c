@@ -69,7 +69,7 @@ int main(int argc, char** argv){
             arguments.args[1] = table_default;
             /* Check if file exists in $DW_HOME/tables/ */
         } else {
-            printf("DW_DEF_TABLE not set, set environment variable or provide table manually\n");
+            printf("ERROR: DW_DEF_TABLE not set, set environment variable or provide table name manually\n");
             return 1;
         }
     }
