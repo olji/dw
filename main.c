@@ -13,7 +13,7 @@ const char *argp_program_bug_address = "<N/A>";
 static char doc[] = "dw - Diceware manager";
 
 struct arguments {
-    enum {GEN = 0, LOOK, CREATE} mode;
+    enum {NONE = 0, GEN, LOOK, CREATE, IMPORT} mode;
     char *args[2];
 } arguments;
 
@@ -22,11 +22,11 @@ static char args_doc[] = "";
 static struct argp_option options[] = {
     { "generate", 'g', "TABLE", 1, "Generate a passphrase using TABLE, uses $DW_DEF_TABLE if no table is provided" },
     { "lookup", 'l', "TABLE, ID", 1, "Look up passphrase using TABLE, uses $DW_DEF_TABLE" },
-    { "create-table", 'c', "NAME, INPUTFILE", 0, "Create a new diceware table in $DW_HOME/tables/NAME"}
+    { "import-table", 'i', "NAME, INPUTFILE", 0, "Import diceware table into $DW_HOME/tables/NAME" },
+    { "create-table", 'c', "NAME, INPUTFILE", 0, "Create a new diceware table in $DW_HOME/tables/NAME" }
 };
 
 static error_t parse_opt (int key, char *arg, struct argp_state *state){
-
     switch (key){
     case 'g':
         arguments.mode = GEN;
@@ -36,6 +36,9 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
         break;
     case 'c':
         arguments.mode = CREATE;
+        break;
+    case 'i':
+        arguments.mode = IMPORT;
         break;
     default:
         return ARGP_ERR_UNKNOWN;
@@ -59,12 +62,17 @@ int main(int argc, char** argv){
     if (arguments.args[1] == NULL){
         if (table_default != NULL){
             arguments.args[1] = table_default;
+            /* Check if file exists in $DW_HOME/tables/ */
         } else {
             printf("DW_DEF_TABLE not set, set environment variable or provide table manually\n");
             return 1;
         }
     }
     switch (arguments.mode){
+    case NONE:
+        printf("No option given, nothing will be done.\n");
+        argp_help(&argp, stdout, ARGP_HELP_LONG, "dw");
+        break;
     case GEN:
         generate();
         break;
