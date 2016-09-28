@@ -13,7 +13,7 @@ const char *argp_program_bug_address = "<N/A>";
 static char doc[] = "dw - Diceware manager";
 
 struct arguments {
-    enum {NONE = 0, GEN, LOOK, CREATE, IMPORT} mode;
+    enum {GEN = 0, LOOK, CREATE, IMPORT} mode;
     char *args[2];
 } arguments;
 
@@ -52,6 +52,11 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
 static struct argp argp = {options, parse_opt, args_doc, doc};
 
 int main(int argc, char** argv){
+    if (argc < 2){
+        printf("No option given, nothing will be done.\n");
+        argp_help(&argp, stdout, ARGP_HELP_LONG, "dw");
+        return 0;
+    }
     struct arguments input_args;
     argp_parse (&argp, argc, argv, 0, 0, &input_args);
     char* home = getenv("DW_HOME");
@@ -69,10 +74,6 @@ int main(int argc, char** argv){
         }
     }
     switch (arguments.mode){
-    case NONE:
-        printf("No option given, nothing will be done.\n");
-        argp_help(&argp, stdout, ARGP_HELP_LONG, "dw");
-        break;
     case GEN:
         generate();
         break;
