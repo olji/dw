@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <argp.h>
 
-#define VERSION_NUM 0.0
-
 void generate();
 void lookup();
 void create_table();
