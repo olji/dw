@@ -1,2 +1,3 @@
+CXX=-Wall -pedantic -Werror
 all: main.c
-	gcc main.c -o dw
+	gcc $(CXX) main.c -o dw
