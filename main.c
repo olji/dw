@@ -19,7 +19,7 @@ static char doc[] = "dw - Diceware manager";
 static char args_doc[] = "[TABLE]";
 
 struct arguments {
-    enum {GEN = 0, LOOK, CREATE, IMPORT} mode;
+    enum {NONE = 0, GEN, LOOK, CREATE, IMPORT} mode;
     char *table;
     char *argument;
 };
@@ -69,7 +69,7 @@ int main(int argc, char **argv){
         return 0;
     }
 
-    struct arguments input_args;
+    struct arguments input_args = {NONE, NULL, NULL};
     argp_parse (&argp, argc, argv, 0, 0, &input_args);
     char *home = getenv("DW_HOME");
     if (home == NULL){
@@ -81,14 +81,12 @@ int main(int argc, char **argv){
     if (input_args.table == NULL){
         printf("Using default table...\n");
         char *table_default = getenv("DW_DEF_TABLE");
-        if (input_args.table == NULL){
-            if (table_default != NULL){
-                input_args.table = table_default;
-                /* Check if file exists in $DW_HOME/tables/ */
-            } else {
-                printf("ERROR: DW_DEF_TABLE not set, set environment variable or provide table name manually\n");
-                return 1;
-            }
+        if (table_default != NULL){
+            input_args.table = table_default;
+            /* Check if file exists in $DW_HOME/tables/ */
+        } else {
+            printf("ERROR: DW_DEF_TABLE not set, set environment variable or provide table name manually\n");
+            return 1;
         }
     }
     FILE *table = fopen(strcat(home, input_args.table), "r");
