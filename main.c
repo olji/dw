@@ -96,7 +96,8 @@ int main(int argc, char **argv){
             printf("Table with that name already exists");
             return 1;
         }
-        table = fopen(strcat(home, input_args.table), "wx");
+        /* strcat has already appended input_args.table into home */
+        table = fopen(home, "wx");
         input = fopen(input_args.argument, "r");
         if (input == NULL){
             printf("ERROR: Could not open input file %s\n", input_args.argument);
