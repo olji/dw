@@ -93,7 +93,7 @@ int main(int argc, char **argv){
     FILE *input;
     if (input_args.mode >= CREATE){
         if (table != NULL){
-            printf("Table with that name already exists");
+            printf("Table with that name already exists\n");
             return 1;
         }
         /* strcat has already appended input_args.table into home */
