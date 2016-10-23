@@ -7,8 +7,8 @@
 
 void generate(FILE*);
 void lookup(FILE*, char*);
-void create_table(FILE*, FILE*);
-void import_table(FILE*, FILE*);
+void create_table(FILE*, FILE*, struct dw_hashmap*);
+void import_table(FILE*, FILE*, struct dw_hashmap*);
 struct table *parse_table(FILE*);
 int write_table(FILE*, struct table*);
 
@@ -150,9 +150,21 @@ void generate(FILE *table){
 }
 void lookup(FILE *table, char *pw_num){
 }
-void create_table(FILE *table, FILE *input_file){
+void create_table(FILE *table, FILE *input_file, struct dw_hashmap *dw_list){
+    fseek(input_file, 0, SEEK_END);
+    int f_size = ftell(input_file);
+    rewind(input_file);
+
+    char *delims = " \n";
+    char *chunk = malloc(f_size);
+    fread(chunk, f_size, 1, input_file);
+    char *str = strtok(chunk, delims);
+    while (str != NULL){
+        dw_map_insert(dw_list, str);
+        str = strtok(NULL, delims);
+    }
 }
-void import_table(FILE *table, FILE *input_file){
+void import_table(FILE *table, FILE *input_file, struct dw_hashmap *dw_list){
 }
 struct table *parse_table(FILE *table){
     return NULL;
