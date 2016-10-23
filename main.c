@@ -10,6 +10,7 @@ void lookup(FILE*, char*);
 void create_table(FILE*, FILE*);
 void import_table(FILE*, FILE*);
 struct table *parse_table(FILE*);
+int write_table(FILE*, struct table*);
 
 const char *argp_program_version = "dw 0.0";
 const char *argp_program_bug_address = "<N/A>";
@@ -19,7 +20,8 @@ static char doc[] = "dw - Diceware manager";
 static char args_doc[] = "[TABLE]";
 
 struct arguments {
-    enum {NONE = 0, GEN, LOOK, CREATE, IMPORT} mode;
+    enum {TABLE_NONE = 0, CREATE, IMPORT} table_option;
+    enum {DW_NONE = 0, GEN, LOOK} dw_option;
     char *table;
     char *argument;
 };
@@ -28,16 +30,16 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
     struct arguments *arguments = state->input;
     switch (key){
     case 'g':
-        arguments->mode = GEN;
+        arguments->dw_option = GEN;
         break;
     case 'l':
-        arguments->mode = LOOK;
+        arguments->dw_option = LOOK;
         break;
     case 'c':
-        arguments->mode = CREATE;
+        arguments->table_option = CREATE;
         break;
     case 'i':
-        arguments->mode = IMPORT;
+        arguments->table_option = IMPORT;
         break;
     case ARGP_KEY_ARG:
         arguments->table = arg;
@@ -69,7 +71,7 @@ int main(int argc, char **argv){
         return 0;
     }
 
-    struct arguments input_args = {NONE, NULL, NULL};
+    struct arguments input_args = {TABLE_NONE, DW_NONE, NULL, NULL};
     argp_parse (&argp, argc, argv, 0, 0, &input_args);
     char *home = getenv("DW_HOME");
     if (home == NULL){
@@ -89,40 +91,57 @@ int main(int argc, char **argv){
             return 1;
         }
     }
-    FILE *table = fopen(strcat(home, input_args.table), "r");
-    FILE *input;
-    if (input_args.mode >= CREATE){
+
+    strcat(home, input_args.table);
+
+    FILE *table;
+    if (input_args.table_option != TABLE_NONE){
+        table = fopen(home, "r");
         if (table != NULL){
-            printf("Table with that name already exists\n");
+            printf("File already exists: %s\n", home);
+            fclose(table);
             return 1;
         }
-        /* strcat has already appended input_args.table into home */
-        table = fopen(home, "wx");
-        input = fopen(input_args.argument, "r");
+        FILE *input = fopen(input_args.argument, "r");
         if (input == NULL){
             printf("ERROR: Could not open input file %s\n", input_args.argument);
             return 1;
         }
+        struct dw_hashmap *dw_list = malloc(sizeof(struct dw_hashmap));
+        switch (input_args.table_option){
+        case CREATE:
+            create_table(table, input, dw_list);
+            break;
+        case IMPORT:
+            printf("Importing\n");
+            import_table(table, input, dw_list);
+            break;
+        default:
+            printf("table_option default case reached, exiting.");
+            return 2;
+        }
+        fclose(input);
+        /*
+         *table = fopen(home, "wx");
+         *fclose(table);
+         */
     }
-    if (table == NULL){
-        printf("ERROR: Could not open file %s\n", home);
-        return 1;
-    }
-    switch (input_args.mode){
-    case GEN:
-        generate(table);
-        break;
-    case LOOK:
-        lookup(table, input_args.argument);
-        break;
-    case CREATE:;
-        create_table(table, input);
-        break;
-    case IMPORT:;
-        import_table(table, input);
-    default:
-        printf("wut");
-        return 2;
+
+    if (input_args.dw_option != DW_NONE){
+        table = fopen(home, "r");
+
+        switch (input_args.dw_option){
+        case GEN:
+            generate(table);
+            break;
+        case LOOK:
+            lookup(table, input_args.argument);
+            break;
+        default:
+            printf("dw_option default case reached, exiting.");
+            return 2;
+        }
+        fclose(table);
     }
     return 0;
 }
@@ -137,4 +156,7 @@ void import_table(FILE *table, FILE *input_file){
 }
 struct table *parse_table(FILE *table){
     return NULL;
+}
+int write_table(FILE* fp, struct table* table){
+    return -1;
 }
