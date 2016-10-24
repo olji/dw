@@ -20,7 +20,7 @@ bool dw_map_insert(struct dw_hashmap *map, char *word){
     if (uniq){
         printf("Hey: %s\n", word);
         struct dw_node *new = malloc(sizeof(struct dw_node));
-        new->hashed_key = pos;
+        new->key = pos;
         new->value = word; 
         new->next = NULL;
         dw_node_insert(&map->map[pos], new);
