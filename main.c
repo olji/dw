@@ -9,8 +9,12 @@ void generate(FILE*);
 void lookup(FILE*, char*);
 void create_table(FILE*, FILE*, struct dw_hashmap*);
 void import_table(FILE*, FILE*, struct dw_hashmap*);
-struct table *parse_table(FILE*);
-int write_table(FILE*, struct table*);
+void parse_table(FILE*, struct dw_hashmap*);
+void table_write(FILE*, struct dw_hashmap*);
+/* Helper function to write table */
+void node_write(FILE*, struct dw_node*);
+void node_print(struct dw_node *node);
+void print_table(struct dw_hashmap *table);
 
 const char *argp_program_version = "dw 0.0";
 const char *argp_program_bug_address = "<N/A>";
@@ -95,6 +99,8 @@ int main(int argc, char **argv){
     strcat(home, input_args.table);
 
     FILE *table;
+    struct dw_hashmap *dw_list = malloc(sizeof(struct dw_hashmap));
+    dw_list->map = malloc(sizeof(struct dw_node*)*TABLE_SIZE);
     if (input_args.table_option != TABLE_NONE){
         table = fopen(home, "r");
         if (table != NULL){
@@ -107,7 +113,6 @@ int main(int argc, char **argv){
             printf("ERROR: Could not open input file %s\n", input_args.argument);
             return 1;
         }
-        struct dw_hashmap *dw_list = malloc(sizeof(struct dw_hashmap));
         switch (input_args.table_option){
         case CREATE:
             create_table(table, input, dw_list);
@@ -123,12 +128,17 @@ int main(int argc, char **argv){
         fclose(input);
         /*
          *table = fopen(home, "wx");
+         *table_write(table, dw_list);
          *fclose(table);
          */
     }
 
     if (input_args.dw_option != DW_NONE){
-        table = fopen(home, "r");
+        if (input_args.table_option == TABLE_NONE){
+            table = fopen(home, "r");
+            parse_table(table, dw_list);
+            fclose(table);
+        }
 
         switch (input_args.dw_option){
         case GEN:
@@ -141,8 +151,8 @@ int main(int argc, char **argv){
             printf("dw_option default case reached, exiting.");
             return 2;
         }
-        fclose(table);
     }
+    dw_delete_map(dw_list);
     return 0;
 }
 
@@ -161,14 +171,55 @@ void create_table(FILE *table, FILE *input_file, struct dw_hashmap *dw_list){
     char *str = strtok(chunk, delims);
     while (str != NULL){
         dw_map_insert(dw_list, str);
+        if (map_filled()){
+            break;
+        }
         str = strtok(NULL, delims);
     }
+    free(chunk);
 }
 void import_table(FILE *table, FILE *input_file, struct dw_hashmap *dw_list){
 }
-struct table *parse_table(FILE *table){
-    return NULL;
+void parse_table(FILE *table, struct dw_hashmap *dw_list){
+    int key_size;
+    char charset[40];
+    fscanf(table, "%d-%s", &key_size, charset);
+    printf("%d-%s\n", key_size, charset);
+    /*
+     *for (int i
+     *    struct dw_node *new = malloc(sizeof(struct dw_node));
+     *    new->key = pos;
+     *    strcpy(new->value.id, given_key);
+     *    new->value.value = word; 
+     *}
+     */
 }
-int write_table(FILE* fp, struct table* table){
-    return -1;
+void node_print(struct dw_node *node){
+    if (node == NULL){
+        return;
+    }
+    printf("%s:%s\n",node->value.id, node->value.value);
+    node_print(node->next);
+}
+void print_table(struct dw_hashmap *table){
+    for (int i = 0; i < TABLE_SIZE; ++i){
+        node_print(table->map[i]);
+    }
+}
+/* 
+ * Mainly used for debugging purposes, may prove useful 
+ * for other things however 
+ */
+void node_write(FILE *fp, struct dw_node *node){
+    if (node == NULL){
+        return;
+    }
+    fprintf(fp, "%s:%s\n",node->value.id, node->value.value);
+    node_write(fp, node->next);
+}
+void table_write(FILE *fp, struct dw_hashmap *table){
+    fprintf(fp, "%d-%s\n", KEY_LENGTH, CHAR_SET);
+    for (int i = 0; i < TABLE_SIZE; ++i){
+        node_write(fp, table->map[i]);
+    }
 }
