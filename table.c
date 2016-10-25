@@ -82,11 +82,10 @@ void dw_node_insert(struct dw_node **list, struct dw_node *node){
 }
 char *dw_map_lookup(struct dw_hashmap*, char*);
 void dw_delete_node(struct dw_node* node){
-    if (node->next == NULL){
-        free(node->value.value);
-        return;
+    if (node->next != NULL){
+        dw_delete_node(node->next);
     }
-    dw_delete_node(node->next);
+    free(node->value.value);
     free(node->next);
 }
 void dw_delete_map(struct dw_hashmap* list){
