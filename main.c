@@ -2,21 +2,23 @@
 #include <stdlib.h>
 #include <argp.h>
 #include <string.h>
+#include <math.h>
+#include <time.h>
 
 #include "table.h"
 
-void generate(FILE*);
-void lookup(FILE*, char*);
+void generate(struct dw_hashmap*);
+void lookup(struct dw_hashmap*, char*);
 void create_table(FILE*, FILE*, struct dw_hashmap*);
 void import_table(FILE*, FILE*, struct dw_hashmap*);
-void parse_table(FILE*, struct dw_hashmap*);
+bool parse_table(FILE*, struct dw_hashmap*);
 void table_write(FILE*, struct dw_hashmap*);
 /* Helper function to write table */
 void node_write(FILE*, struct dw_node*);
 void node_print(struct dw_node *node);
 void print_table(struct dw_hashmap *table);
 
-const char *argp_program_version = "dw 0.0";
+const char *argp_program_version = "dw 0.1";
 const char *argp_program_bug_address = "<N/A>";
 
 static char doc[] = "dw - Diceware manager";
@@ -126,26 +128,32 @@ int main(int argc, char **argv){
             return 2;
         }
         fclose(input);
-        /*
-         *table = fopen(home, "wx");
-         *table_write(table, dw_list);
-         *fclose(table);
-         */
+        table = fopen(home, "wx");
+        table_write(table, dw_list);
+        fclose(table);
     }
 
     if (input_args.dw_option != DW_NONE){
         if (input_args.table_option == TABLE_NONE){
             table = fopen(home, "r");
-            parse_table(table, dw_list);
+            if (table == NULL){
+                printf("ERROR: Failed to open file %s for reading.\n", home);
+                return 1;
+            }
+            bool ret = parse_table(table, dw_list);
             fclose(table);
+            if (!ret){
+                printf("Exiting...\n");
+                return 1;
+            }
         }
 
         switch (input_args.dw_option){
         case GEN:
-            generate(table);
+            generate(dw_list);
             break;
         case LOOK:
-            lookup(table, input_args.argument);
+            lookup(dw_list, input_args.argument);
             break;
         default:
             printf("dw_option default case reached, exiting.");
@@ -156,9 +164,41 @@ int main(int argc, char **argv){
     return 0;
 }
 
-void generate(FILE *table){
+void generate(struct dw_hashmap *dw_list){
+    size_t length = 0;
+
+    printf("How many words? ");
+    scanf("%zu", &length);
+    char *id = calloc(length, sizeof(char) + 1);
+    srand(time(NULL));
+    char *passphrase = calloc(1, sizeof(char));
+    char *pw_id = calloc((length*KEY_LENGTH) + length + 1, sizeof(char));
+
+    for (int i = 0; i < length; ++i){
+        for (int j = 0; j < KEY_LENGTH; ++j){
+            id[j] = CHAR_SET[rand()%strlen(CHAR_SET)];
+        }
+        strcat(pw_id, id);
+        strcat(pw_id, " ");
+
+        char *found_word = dw_map_lookup(dw_list, id);
+        char *word_copy = calloc(strlen(found_word) + 1, sizeof(char));
+        strcpy(word_copy, found_word);
+        /* Using sizeof instead of strlen can be used to avoid addition by two, but is not as readable */
+        char *tmp_pw = calloc(strlen(passphrase) + strlen(word_copy) + 2, sizeof(char));
+        strcat(tmp_pw, passphrase);
+        strcat(tmp_pw, " ");
+        strcat(tmp_pw, word_copy);
+        free(passphrase);
+        free(word_copy);
+        passphrase = tmp_pw;
+    }
+    printf("Passphrase: %s\n", passphrase);
+    printf("Passphrase ID: %s\n", pw_id);
+    free(pw_id);
+    free(passphrase);
 }
-void lookup(FILE *table, char *pw_num){
+void lookup(struct dw_hashmap *dw_list, char *pw_num){
 }
 void create_table(FILE *table, FILE *input_file, struct dw_hashmap *dw_list){
     fseek(input_file, 0, SEEK_END);
@@ -180,29 +220,70 @@ void create_table(FILE *table, FILE *input_file, struct dw_hashmap *dw_list){
 }
 void import_table(FILE *table, FILE *input_file, struct dw_hashmap *dw_list){
 }
-void parse_table(FILE *table, struct dw_hashmap *dw_list){
-    int key_size;
-    char charset[40];
-    fscanf(table, "%d-%s", &key_size, charset);
-    printf("%d-%s\n", key_size, charset);
-    /*
-     *for (int i
-     *    struct dw_node *new = malloc(sizeof(struct dw_node));
-     *    new->key = pos;
-     *    strcpy(new->value.id, given_key);
-     *    new->value.value = word; 
-     *}
-     */
+bool parse_table(FILE *table, struct dw_hashmap *dw_list){
+    fseek(table, 0, SEEK_END);
+    int f_size = ftell(table);
+    rewind(table);
+
+    char *chunk = malloc(f_size);
+    fread(chunk, f_size, 1, table);
+    char *str = strtok(chunk, "\n");
+
+    size_t key_size, charset_size;
+
+    sscanf(str, "%zu-%zu", &key_size, &charset_size);
+
+    printf("key_size: %zu, charset_size: %zu\n", key_size, charset_size);
+    char *charset = malloc(sizeof(char)*charset_size+1);
+    const int table_size = pow(charset_size, key_size);
+
+    str = strtok(NULL, "\n");
+    sscanf(str, "%s", charset);
+    printf("charset: '%s'\n", charset);
+
+    for (int i = 0; i < table_size; ++i){
+        str = strtok(NULL, "\n");
+        if (str == NULL){
+            printf("Not enough entries present?\nIteration %d of %d", i, table_size);
+            return false;
+        }
+        char key[key_size];
+        size_t word_size;
+        sscanf(str, "%s", key);
+        str = strtok(NULL, "\n");
+        sscanf(str, "%zu", &word_size);
+
+        str = strtok(NULL, "\n");
+        if (str == NULL){
+            printf("Entry not complete?\n");
+            return false;
+        }
+        char *word = malloc(sizeof(char)*word_size+1);
+        sscanf(str, "%s", word);
+        struct dw_node *new = malloc(sizeof(struct dw_node));
+        new->value.value = malloc(sizeof(char)*strlen(word)+1);
+        strcpy(new->value.value, word);
+        strcpy(new->value.id, key);
+        new->key = str_hash(key, table_size);
+        new->next = NULL;
+        dw_node_insert(&(dw_list->map[new->key]), new);
+        free(word);
+    }
+    free(charset);
+    free(chunk);
+    return true;
 }
 void node_print(struct dw_node *node){
     if (node == NULL){
+        printf("[NULL]\n");
         return;
     }
-    printf("%s:%s\n",node->value.id, node->value.value);
+    printf("[%d:[%s]]->", node->key, node->value.id);
     node_print(node->next);
 }
 void print_table(struct dw_hashmap *table){
     for (int i = 0; i < TABLE_SIZE; ++i){
+        printf("[%d]->", i);
         node_print(table->map[i]);
     }
 }
@@ -214,11 +295,12 @@ void node_write(FILE *fp, struct dw_node *node){
     if (node == NULL){
         return;
     }
-    fprintf(fp, "%s:%s\n",node->value.id, node->value.value);
+    fprintf(fp, "%s\n%zu\n%s\n",node->value.id, strlen(node->value.value), node->value.value);
     node_write(fp, node->next);
 }
 void table_write(FILE *fp, struct dw_hashmap *table){
-    fprintf(fp, "%d-%s\n", KEY_LENGTH, CHAR_SET);
+    fprintf(fp, "%zu-%zu\n", (size_t)KEY_LENGTH, strlen(CHAR_SET));
+    fprintf(fp, "%s\n", CHAR_SET);
     for (int i = 0; i < TABLE_SIZE; ++i){
         node_write(fp, table->map[i]);
     }
