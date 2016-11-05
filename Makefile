@@ -1,6 +1,6 @@
 CXX=-Wall -pedantic -Werror
 SRC_OBJS=$(wildcard *.c)
-LIBS=-lm
+LIBS=-lm -lconfuse
 all: main.c
 	gcc $(CXX) $(SRC_OBJS) $(LIBS) -o dw
 debug: main.c
