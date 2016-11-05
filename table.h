@@ -8,10 +8,6 @@
  * Constant for now, when configuration is up and 
  * running remove KEY_BASE and use length of CHAR_SET for TABLE_SIZE
  */
-#define KEY_LENGTH 3
-#define CHAR_SET "0123456789"
-#define CHAR_SET_LENGTH strlen(CHAR_SET)
-#define TABLE_SIZE (int)(pow(CHAR_SET_LENGTH,KEY_LENGTH))
 
 /* 
  * Key is identifier for the value, 
@@ -20,7 +16,7 @@
  * struct node_value to be used when key generation is solved.
  */
 struct node_value{
-    char id[KEY_LENGTH+1];
+    char *id;
     char *value;
 };
 /* Hash map used for dw list representations */
