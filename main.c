@@ -21,7 +21,7 @@ void node_write(FILE*, struct dw_node*);
 void node_print(struct dw_node *node);
 void print_table(struct dw_hashmap *table);
 
-const char *argp_program_version = "dw 0.1";
+const char *argp_program_version = "dw 0.2";
 const char *argp_program_bug_address = "<N/A>";
 
 static char doc[] = "dw - Diceware manager";
