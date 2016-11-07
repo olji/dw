@@ -108,9 +108,28 @@ int main(int argc, char **argv){
     if (input_args.list_option != LIST_NONE){
         list = fopen(home, "r");
         if (list != NULL){
-            printf("File already exists: %s\n", home);
             fclose(list);
-            return 1;
+            printf("File already exists: %s, delete? [y/n]: ", home);
+            char ans = 0;
+            do{
+                if (ans != 0){
+                    printf("Please answer y or n\n");
+                }
+                /*
+                 * Scanf sets the value of input_args.list_option to zero for some reason here,
+                 * workaround until actual issue found and corrected
+                 */
+                int tmp = input_args.list_option;
+                scanf("%s", &ans);
+                input_args.list_option = tmp;
+                ans = tolower(ans);
+            } while (ans != 'y' && ans != 'n');
+            if (ans == 'y'){
+                remove(home);
+            } else {
+                return 1;
+            }
+            printf("List option: %d\n", input_args.list_option);
         }
         FILE *input = fopen(input_args.argument, "r");
         if (input == NULL){
@@ -151,6 +170,8 @@ int main(int argc, char **argv){
                 printf("Exiting...\n");
                 return 1;
             }
+        } else {
+            map_rearrange(dw_list);
         }
 
         switch (input_args.dw_option){

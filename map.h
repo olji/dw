@@ -34,6 +34,7 @@ char *map_lookup(struct dw_hashmap*, char*);
 void  map_delete(struct dw_hashmap*);
 void  map_write(FILE*, struct dw_hashmap*);
 void  map_print(struct dw_hashmap *table);
+void  map_rearrange(struct dw_hashmap*);
 
 void  node_insert(struct dw_node**, struct dw_node*);
 void  node_write(FILE*, struct dw_node*);
