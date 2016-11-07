@@ -2,19 +2,22 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
-#include "table.h"
+#include <math.h>
+
+#include "map.h"
 #include "config.h"
 
 extern struct dw_config CONFIG;
 
 static char *key;
 int str_hash(char *word, int modval){
-    int pos = 0;
+    unsigned int pos = 0;
     for (int i=0; word[i] != '\0'; ++i){
         word[i] = tolower(word[i]);
         pos += word[i];
+        pos = pos - pos + pow(pos, 2);
     }
-    return pos%modval;
+    return pos % modval;
 }
 void init_key(){
     key = calloc(CONFIG.key_length + 1, sizeof(char));
@@ -57,9 +60,9 @@ char *gen_word_key(){
     }
     return key;
 }
-bool dw_map_insert(struct dw_hashmap *map, char *word){
-    int pos = str_hash(word, CONFIG.table_size);
-    bool uniq = dw_node_unique(map->map[pos], word);
+bool map_insert(struct dw_hashmap *map, char *word){
+    int pos = str_hash(word, CONFIG.map_size);
+    bool uniq = node_unique(map->map[pos], word);
     if (!CONFIG.unique || uniq){
         char *given_key = gen_word_key();
         struct dw_node *new = malloc(sizeof(struct dw_node));
@@ -69,58 +72,92 @@ bool dw_map_insert(struct dw_hashmap *map, char *word){
         new->value.value = malloc(sizeof(char)*strlen(word)+1);
         strcpy(new->value.value, word);
         new->next = NULL;
-        dw_node_insert(&map->map[pos], new);
+        node_insert(&map->map[pos], new);
     }
 
     return uniq;
 }
-bool dw_node_unique(struct dw_node *list, char *str){
+bool node_unique(struct dw_node *list, char *str){
     if (list == NULL){
         return true;
     } 
     if (strcmp(list->value.value, str) == 0){
         return false;
     }
-    return dw_node_unique(list->next, str);
+    return node_unique(list->next, str);
 }
-void dw_node_insert(struct dw_node **list, struct dw_node *node){
+void node_insert(struct dw_node **list, struct dw_node *node){
     if (*list == NULL){
         *list = node;
     } else {
-        dw_node_insert(&(*list)->next, node);
+        node_insert(&(*list)->next, node);
     }
 }
-char *dw_node_lookup(struct dw_node *node, char *id){
+char *node_lookup(struct dw_node *node, char *id){
     if (node == NULL){
         return "";
     }
     if (strcmp(node->value.id, id) == 0){
         return node->value.value;
     }
-    return dw_node_lookup(node->next, id);
+    return node_lookup(node->next, id);
 }
-char *dw_map_lookup(struct dw_hashmap *list, char *id){
-    char *ret = dw_node_lookup(list->map[str_hash(id, CONFIG.table_size)], id);
+char *map_lookup(struct dw_hashmap *list, char *id){
+    char *ret = node_lookup(list->map[str_hash(id, CONFIG.map_size)], id);
     if (strcmp(ret, "") == 0){
-        printf("ERR: Could not find '%s' in hash %d\n", id, str_hash(id, CONFIG.table_size));
+        printf("ERR: Could not find '%s' in hash %d\n", id, str_hash(id, CONFIG.map_size));
     }
     return ret;
 }
-void dw_delete_node(struct dw_node* node){
+void node_delete(struct dw_node* node){
     if (node->next != NULL){
-        dw_delete_node(node->next);
+        node_delete(node->next);
     }
     free(node->value.id);
     free(node->value.value);
     free(node->next);
 }
-void dw_delete_map(struct dw_hashmap* list){
-    for (int i = 0; i < CONFIG.table_size; ++i){
+void map_delete(struct dw_hashmap* list){
+    for (int i = 0; i < CONFIG.map_size; ++i){
         if (list->map[i] != NULL){
-            dw_delete_node(list->map[i]);
+            node_delete(list->map[i]);
             free(list->map[i]);
         }
     }
     free(list->map);
     free(list);
+}
+void node_print(struct dw_node *node){
+    if (node == NULL){
+        printf("[NULL]\n");
+        return;
+    }
+    printf("    [%d:[%s:%s]]->", node->key, node->value.id, node->value.value);
+    node_print(node->next);
+}
+void map_print(struct dw_hashmap *map){
+    for (int i = 0; i < CONFIG.map_size; ++i){
+        printf("[%d]->", i);
+        node_print(map->map[i]);
+    }
+}
+/* 
+ * Mainly used for debugging purposes, may prove useful 
+ * for other things however 
+ */
+void node_write(FILE *fp, struct dw_node *node){
+    if (node == NULL){
+        return;
+    }
+    fprintf(fp, "%s\n%zu\n%s\n",node->value.id, strlen(node->value.value), node->value.value);
+    node_write(fp, node->next);
+}
+void map_write(FILE *fp, struct dw_hashmap *map){
+    fprintf(fp, "%zu-%zu\n", (size_t)CONFIG.key_length, CONFIG.char_set_size);
+    fprintf(fp, "%s\n", CONFIG.char_set);
+    for (int i = 0; i < CONFIG.map_size; ++i){
+        node_write(fp, map->map[i]);
+    }
+}
+void  map_rearrange(struct dw_hashmap *map){
 }

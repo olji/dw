@@ -4,11 +4,11 @@
 #include <confuse.h>
 
 struct dw_config{
-    char *default_table;
+    char *default_list;
     long int key_length;
     char *char_set;
     size_t char_set_size;
-    size_t table_size;
+    size_t map_size;
     cfg_bool_t unique;
     long int word_min_len;
 } CONFIG;
