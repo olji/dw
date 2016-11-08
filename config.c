@@ -15,10 +15,10 @@ extern struct dw_config CONFIG;
 
 int read_config(char *homedir){
     /* Set default values */
-    CONFIG.default_list = malloc(sizeof(char)*strlen(DEF_LIST) + 1);
+    CONFIG.default_list = malloc(sizeof(char) * (strlen(DEF_LIST) + 1));
     strcpy(CONFIG.default_list, DEF_LIST);
     CONFIG.key_length = 5;
-    CONFIG.char_set = malloc(sizeof(char)*strlen(DEF_CHARSET) + 1);
+    CONFIG.char_set = malloc(sizeof(char) * (strlen(DEF_CHARSET) + 1));
     strcpy(CONFIG.char_set, DEF_CHARSET);
     CONFIG.unique = true;
     CONFIG.word_min_len = 2;

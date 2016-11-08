@@ -11,7 +11,7 @@ extern struct dw_config CONFIG;
 
 static char *key;
 int str_hash(char *word, int modval){
-    unsigned int pos = 0;
+    size_t pos = 0;
     for (int i=0; word[i] != '\0'; ++i){
         word[i] = tolower(word[i]);
         pos += word[i];
@@ -67,9 +67,9 @@ bool map_insert(struct dw_hashmap *map, char *word){
         char *given_key = gen_word_key();
         struct dw_node *new = malloc(sizeof(struct dw_node));
         new->key = pos;
-        new->value.id = malloc(sizeof(char)*(CONFIG.key_length+1));
+        new->value.id = malloc(sizeof(char) * (CONFIG.key_length + 1));
         strcpy(new->value.id, given_key);
-        new->value.value = malloc(sizeof(char)*strlen(word)+1);
+        new->value.value = malloc(sizeof(char) * (strlen(word) + 1));
         strcpy(new->value.value, word);
         new->next = NULL;
         node_insert(&map->map[pos], new);
@@ -118,8 +118,7 @@ void node_delete(struct dw_node* node){
     free(node->next);
 }
 void map_delete(struct dw_hashmap* map){
-    int map_size = sizeof(map->map) / sizeof(struct dw_node*);
-    for (int i = 0; i < map_size; ++i){
+    for (int i = 0; i < CONFIG.map_size; ++i){
         if (map->map[i] != NULL){
             node_delete(map->map[i]);
             free(map->map[i]);
@@ -138,14 +137,12 @@ void node_write(FILE *fp, struct dw_node *node){
 void map_write(FILE *fp, struct dw_hashmap *map){
     fprintf(fp, "%zu-%zu\n", (size_t)CONFIG.key_length, CONFIG.char_set_size);
     fprintf(fp, "%s\n", CONFIG.char_set);
-    int map_size = sizeof(map->map) / sizeof(struct dw_node*);
-    for (int i = 0; i < map_size; ++i){
+    for (int i = 0; i < CONFIG.map_size; ++i){
         node_write(fp, map->map[i]);
     }
 }
 void  map_rearrange(struct dw_hashmap *map){
-    int map_size = sizeof(map->map) / sizeof(struct dw_node*);
-    for (int i = 0; i < map_size; ++i){
+    for (int i = 0; i < CONFIG.map_size; ++i){
         if (map->map[i] != NULL){
         }
     }
@@ -160,12 +157,11 @@ void node_print(struct dw_node *node){
         printf("[NULL]\n");
         return;
     }
-    printf("    [%d:[%s:%s]]->", node->key, node->value.id, node->value.value);
+    printf("[%d:[%s:%s]]->", node->key, node->value.id, node->value.value);
     node_print(node->next);
 }
 void map_print(struct dw_hashmap *map){
-    int map_size = sizeof(map->map) / sizeof(struct dw_node*);
-    for (int i = 0; i < map_size; ++i){
+    for (int i = 0; i < CONFIG.map_size; ++i){
         printf("[%d]->", i);
         node_print(map->map[i]);
     }

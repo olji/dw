@@ -92,7 +92,7 @@ int main(int argc, char **argv){
     if (input_args.list == NULL){
         printf("Using default list...\n");
         if (CONFIG.default_list != NULL){
-            input_args.list = malloc(sizeof(char)*(strlen(CONFIG.default_list)+1));
+            input_args.list = malloc(sizeof(char) * (strlen(CONFIG.default_list) + 1));
             strcpy(input_args.list, CONFIG.default_list);
         } else {
             printf("ERROR: default list not set, set default list in configuration or provide list name manually\n");
@@ -129,7 +129,6 @@ int main(int argc, char **argv){
             } else {
                 return 1;
             }
-            printf("List option: %d\n", input_args.list_option);
         }
         FILE *input = fopen(input_args.argument, "r");
         if (input == NULL){
@@ -186,9 +185,6 @@ int main(int argc, char **argv){
             return 2;
         }
     }
-    /*
-     *print_table(dw_list);
-     */
     map_delete(dw_list);
     free_conf();
     return 0;
@@ -199,7 +195,7 @@ void generate(struct dw_hashmap *dw_list){
 
     printf("How many words? ");
     scanf("%zu", &length);
-    char *id = calloc(length, sizeof(char) + 1);
+    char *id = calloc(length + 1, sizeof(char));
     srand(time(NULL));
     char *passphrase = calloc(1, sizeof(char));
     char *pw_id = calloc((length*CONFIG.key_length) + length + 1, sizeof(char));
@@ -285,7 +281,7 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
 
     sscanf(str, "%zu-%zu", &key_size, &charset_size);
 
-    char *charset = malloc(sizeof(char)*charset_size+1);
+    char *charset = malloc(sizeof(char) * (charset_size + 1));
     const int map_size = pow(charset_size, key_size);
 
     str = strtok(NULL, "\n");
@@ -309,18 +305,22 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
         size_t word_size;
         sscanf(str, "%s", key);
         str = strtok(NULL, "\n");
+        if (str == NULL){
+            printf("Entry not complete? (Word size string missing)\n");
+            return false;
+        }
         sscanf(str, "%zu", &word_size);
 
         str = strtok(NULL, "\n");
         if (str == NULL){
-            printf("Entry not complete?\n");
+            printf("Entry not complete? (Word missing)\n");
             return false;
         }
-        char *word = malloc(sizeof(char)*word_size+1);
+        char *word = malloc(sizeof(char) * (word_size + 1));
         sscanf(str, "%s", word);
         struct dw_node *new = malloc(sizeof(struct dw_node));
-        new->value.id = malloc(sizeof(char)*key_size+1);
-        new->value.value = malloc(sizeof(char)*strlen(word)+1);
+        new->value.id = malloc(sizeof(char) * (key_size + 1));
+        new->value.value = malloc(sizeof(char) * (strlen(word) + 1));
         strcpy(new->value.value, word);
         strcpy(new->value.id, key);
         new->key = str_hash(key, map_size);
