@@ -1,7 +1,9 @@
-CXX=-Wall -pedantic -Werror
+CFLAGS=-Wall -pedantic -Werror
 SRC_OBJS=$(wildcard *.c)
 LIBS=-lm -lconfuse
+DEBUG=1
+CVARS= -DDEBUG=$(DEBUG)
 debug: main.c
-	gcc $(CXX) -g $(SRC_OBJS) $(LIBS) -o dw
+	gcc $(CFLAGS) -g $(SRC_OBJS) $(LIBS) $(CVARS) -o dw
 release: main.c
-	gcc $(CXX) $(SRC_OBJS) $(LIBS) -o dw
+	gcc $(CFLAGS) $(SRC_OBJS) $(LIBS) -o dw
