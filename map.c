@@ -109,18 +109,18 @@ char *map_lookup(struct dw_hashmap *map, char *id){
     }
     return ret;
 }
-void node_delete(struct dw_node* node){
+void node_free(struct dw_node* node){
     if (node->next != NULL){
-        node_delete(node->next);
+        node_free(node->next);
     }
     free(node->value.id);
     free(node->value.value);
     free(node->next);
 }
-void map_delete(struct dw_hashmap* map){
+void map_free(struct dw_hashmap* map){
     for (int i = 0; i < CONFIG.map_size; ++i){
         if (map->map[i] != NULL){
-            node_delete(map->map[i]);
+            node_free(map->map[i]);
             free(map->map[i]);
         }
     }

@@ -84,7 +84,7 @@ bool write_default_config(char *configpath){
     fclose(cf);
     return true;
 }
-void free_conf(){
+void conf_free(){
     free(CONFIG.default_list);
     free(CONFIG.char_set);
 }

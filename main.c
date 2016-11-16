@@ -8,13 +8,31 @@
 #include "map.h"
 #include "config.h"
 
+#define DEF_HOME "/.dw/"
+
 extern struct dw_config CONFIG;
 
-void generate(struct dw_hashmap*);
+struct arg_pair {
+    enum {NONE = 0, INPUT_FILE, PP_LENGTH} type;
+    char *value;
+    struct arg_pair *next;
+};
+struct arguments {
+    enum {LIST_NONE = 0, CREATE, IMPORT} list_option;
+    enum {DW_NONE = 0, GEN, LOOK} dw_option;
+    bool use_list;
+    char *list;
+    struct arg_pair *arguments;
+    bool parse_failure;
+};
+
+void generate(struct dw_hashmap*, int);
 void lookup(struct dw_hashmap*, char*);
-int  list_create(FILE*, FILE*, struct dw_hashmap*);
+bool arguments_insert(struct arguments*, int, char*);
+int list_create(FILE*, FILE*, struct dw_hashmap*);
 void list_import(FILE*, FILE*, struct dw_hashmap*);
 bool list_parse(FILE*, struct dw_hashmap*);
+void args_free(struct arg_pair*);
 
 const char *argp_program_version = "dw 0.2";
 const char *argp_program_bug_address = "<N/A>";
@@ -23,18 +41,23 @@ static char doc[] = "dw - Diceware manager";
 
 static char args_doc[] = "[LIST]";
 
-struct arguments {
-    enum {LIST_NONE = 0, CREATE, IMPORT} list_option;
-    enum {DW_NONE = 0, GEN, LOOK} dw_option;
-    char *list;
-    char *argument;
-};
-
 static error_t parse_opt (int key, char *arg, struct argp_state *state){
     struct arguments *arguments = state->input;
     switch (key){
     case 'g':
         arguments->dw_option = GEN;
+        if (arg != NULL){
+            for (int i = 0; i < strlen(arg); ++i){
+                if (arg[i] < '0' || arg[i] > '9'){
+                    printf("ERR: Optional parameter to -g (--generate) should only be integers\n");
+                    arguments->parse_failure = true;
+                    exit(1);
+                }
+            }
+            /* check string characters is only numbers 0-9 */
+            arguments_insert(arguments, PP_LENGTH, arg);
+        } else {
+        }
         break;
     case 'l':
         arguments->dw_option = LOOK;
@@ -45,6 +68,11 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
     case 'i':
         arguments->list_option = IMPORT;
         break;
+    case 'u':
+        arguments->list = malloc(sizeof(char)*(strlen(arg) + 1));
+        strcpy(arguments->list, arg);
+        arguments->use_list = true;
+        break;
     case ARGP_KEY_ARG:
         arguments->list = arg;
         break;
@@ -52,7 +80,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
         return ARGP_ERR_UNKNOWN;
     }
     if (key != ARGP_KEY_ARG && arg != NULL){
-        arguments->argument = arg;
+        arguments_insert(arguments, INPUT_FILE, arg);
     }
     return 0;
 }
@@ -63,12 +91,16 @@ static struct argp_option options[] = {
     { "lookup", 'l', "DW_NUM", OPTION_ARG_OPTIONAL, "Look up passphrase using LIST", 1 },
     { "import-list", 'i', "FILE", 0, "Import diceware list named LIST", 0 },
     { "create-list", 'c', "FILE", 0, "Create a new diceware list named LIST", 0 },
+    { "use-list", 'u', "LIST", 0, "Use given LIST not present in home directory of dw", 0 },
     { 0 }
 };
 
 static struct argp argp = {options, parse_opt, args_doc, doc};
 
 int main(int argc, char **argv){
+#if DEBUG == 1
+    printf("DEBUG IS ON\n===================\n");
+#endif
     if (argc < 2){
         printf("No function asked for.\n\n");
         argp_help(&argp, stdout, ARGP_HELP_SHORT_USAGE, "dw");
@@ -76,15 +108,24 @@ int main(int argc, char **argv){
         return 0;
     }
 
-    struct arguments input_args = {LIST_NONE, DW_NONE, NULL, NULL};
+    struct arguments input_args = {LIST_NONE, DW_NONE, false, NULL, NULL, 0, false};
     argp_parse (&argp, argc, argv, 0, 0, &input_args);
+    if (input_args.parse_failure){
+        return 1;
+    }
     char *home = getenv("DW_HOME");
+    char *listpath;
     if (home == NULL){
         printf("NOTE: DW_HOME is not set, assuming ~/.dw/\n");
         char *usr_home = getenv("HOME");
-        home = strcat(usr_home, "/.dw/");
+        listpath = calloc((strlen(usr_home) + strlen(DEF_HOME) + 1), sizeof(char));
+        strcat(listpath, usr_home);
+        strcat(listpath, DEF_HOME);
+    } else {
+        listpath = malloc(sizeof(char) * (strlen(home) + 1));
+        strcat(listpath, home);
     }
-    int exit_status = read_config(home);
+    int exit_status = read_config(listpath);
     if (exit_status < 1){
         return abs(exit_status);
     }
@@ -100,16 +141,45 @@ int main(int argc, char **argv){
         }
     }
 
-    strcat(home, input_args.list);
+    printf("%s\n", input_args.list);
+    if (input_args.use_list){
+        free(listpath);
+        listpath = calloc(strlen(input_args.list) + 1, sizeof(char));
+        strcat(listpath, input_args.list);
+    } else {
+        char *tmp = calloc(strlen(listpath) + strlen(input_args.list) + 1, sizeof(char));
+        strcat(tmp, listpath);
+        strcat(tmp, input_args.list);
+        free(listpath);
+        listpath = tmp;
+    }
+    printf("listpath: %s\n", listpath);
 
+    char *input_file;
+    int g_length = 0;
+
+    struct arg_pair *node = input_args.arguments;
+    while (node->next != NULL){
+        if (node->type == INPUT_FILE){
+            input_file = node->value;
+        } else if (node->type == PP_LENGTH){
+            char* end;
+            g_length = (int)strtol(node->value, &end, 10);
+        }
+        node = node->next;
+    }
     FILE *list;
+
+    /*
+     * We currently cannot be sure of the actual size of the pointer array,
+     * so we wait with allocating memory for that.
+     */
     struct dw_hashmap *dw_list = malloc(sizeof(struct dw_hashmap));
-    dw_list->map = calloc(CONFIG.map_size, sizeof(struct dw_node*));
     if (input_args.list_option != LIST_NONE){
-        list = fopen(home, "r");
+        list = fopen(listpath, "r");
         if (list != NULL){
             fclose(list);
-            printf("File already exists: %s, delete? [y/n]: ", home);
+            printf("File already exists: %s, delete? [y/n]: ", listpath);
             char ans = 0;
             do{
                 if (ans != 0){
@@ -125,21 +195,21 @@ int main(int argc, char **argv){
                 ans = tolower(ans);
             } while (ans != 'y' && ans != 'n');
             if (ans == 'y'){
-                remove(home);
+                remove(listpath);
             } else {
                 return 1;
             }
         }
-        FILE *input = fopen(input_args.argument, "r");
+        FILE *input = fopen(input_file, "r");
         if (input == NULL){
-            printf("ERROR: Could not open input file %s\n", input_args.argument);
+            printf("ERROR: Could not open input file %s\n", input_file);
             return 1;
         }
         switch (input_args.list_option){
         case CREATE:;
-            int retval = list_create(list, input, dw_list);
-            if (retval < 1){
-                return abs(retval);
+            exit_status = list_create(list, input, dw_list);
+            if (exit_status < 1){
+                return abs(exit_status);
             }
             break;
         case IMPORT:
@@ -151,18 +221,23 @@ int main(int argc, char **argv){
             return 2;
         }
         fclose(input);
-        list = fopen(home, "wx");
+        list = fopen(listpath, "wx");
         map_write(list, dw_list);
         fclose(list);
     }
 
     if (input_args.dw_option != DW_NONE){
         if (input_args.list_option == LIST_NONE){
-            list = fopen(home, "r");
+            list = fopen(listpath, "r");
             if (list == NULL){
-                printf("ERROR: Failed to open file %s for reading.\n", home);
+                printf("ERROR: Failed to open list %s for reading.\n", listpath);
                 return 1;
             }
+#if DEBUG
+            else {
+                printf("Opened: %s\n", listpath);
+            }
+#endif
             bool ret = list_parse(list, dw_list);
             fclose(list);
             if (!ret){
@@ -175,26 +250,33 @@ int main(int argc, char **argv){
 
         switch (input_args.dw_option){
         case GEN:
-            generate(dw_list);
+            generate(dw_list, g_length);
             break;
         case LOOK:
-            lookup(dw_list, input_args.argument);
+            lookup(dw_list, input_file);
             break;
         default:
             printf("dw_option default case reached, exiting.");
             return 2;
         }
     }
-    map_delete(dw_list);
-    free_conf();
+
+    /* Cleanup */
+    free(listpath);
+    map_free(dw_list);
+    args_free(input_args.arguments);
+    conf_free();
     return 0;
 }
 
-void generate(struct dw_hashmap *dw_list){
-    size_t length = 0;
+void generate(struct dw_hashmap *dw_list, int length){
 
-    printf("How many words? ");
-    scanf("%zu", &length);
+    if (length == 0){
+        do{
+            printf("How many words? ");
+            scanf("%d", &length);
+        } while (length > 0);
+    }
     char *id = calloc(length + 1, sizeof(char));
     srand(time(NULL));
     char *passphrase = calloc(1, sizeof(char));
@@ -277,7 +359,10 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
     fread(chunk, f_size, 1, list);
     char *str = strtok(chunk, "\n");
 
-    size_t key_size, charset_size;
+    size_t key_size = 0, charset_size = 0;
+#if DEBUG
+    printf("chunk: %s, f_size: %d, chunk_part: %s\n", chunk, f_size, str);
+#endif
 
     sscanf(str, "%zu-%zu", &key_size, &charset_size);
 
@@ -295,6 +380,8 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
     CONFIG.char_set_size = charset_size;
     CONFIG.map_size = map_size;
 
+    /* Allocate pointer array now when we know its size */
+    dw_list->map = calloc(CONFIG.map_size, sizeof(struct dw_node*));
     for (int i = 0; i < map_size; ++i){
         str = strtok(NULL, "\n");
         if (str == NULL){
@@ -316,19 +403,44 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
             printf("Entry not complete? (Word missing)\n");
             return false;
         }
-        char *word = malloc(sizeof(char) * (word_size + 1));
-        sscanf(str, "%s", word);
+
         struct dw_node *new = malloc(sizeof(struct dw_node));
         new->value.id = malloc(sizeof(char) * (key_size + 1));
-        new->value.value = malloc(sizeof(char) * (strlen(word) + 1));
-        strcpy(new->value.value, word);
+        new->value.value = malloc(sizeof(char) * (strlen(str) + 1));
+        strcpy(new->value.value, str);
         strcpy(new->value.id, key);
         new->key = str_hash(key, map_size);
         new->next = NULL;
+#if DEBUG
+        printf("map size: %zu\n", CONFIG.map_size);
+        printf("key hash: %d\n", new->key);
+#endif
         node_insert(&(dw_list->map[new->key]), new);
-        free(word);
     }
     free(charset);
     free(chunk);
     return true;
+}
+bool arguments_insert(struct arguments *arguments, int type, char *arg){
+    struct arg_pair *new = malloc(sizeof(struct arg_pair));
+    new->type = type;
+    new->value = arg;
+    new->next = NULL;
+
+    struct arg_pair *node = arguments->arguments;
+    if (node != NULL){
+        while (node->next != NULL){
+            node = node->next;
+        }
+        node->next = new;
+    } else {
+        arguments->arguments = new;
+    }
+    return true;
+}
+void args_free(struct arg_pair *node){
+    if (node != NULL){
+        args_free(node->next);
+        free(node);
+    }
 }

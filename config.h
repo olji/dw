@@ -15,6 +15,6 @@ struct dw_config{
 
 int read_config(char*);
 bool write_default_config(char*);
-void free_conf();
+void conf_free();
 
 #endif
