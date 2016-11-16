@@ -159,14 +159,16 @@ int main(int argc, char **argv){
     int g_length = 0;
 
     struct arg_pair *node = input_args.arguments;
-    while (node->next != NULL){
-        if (node->type == INPUT_FILE){
-            input_file = node->value;
-        } else if (node->type == PP_LENGTH){
-            char* end;
-            g_length = (int)strtol(node->value, &end, 10);
+    if (node != NULL){
+        while (node->next != NULL){
+            if (node->type == INPUT_FILE){
+                input_file = node->value;
+            } else if (node->type == PP_LENGTH){
+                char* end;
+                g_length = (int)strtol(node->value, &end, 10);
+            }
+            node = node->next;
         }
-        node = node->next;
     }
     FILE *list;
 
@@ -275,7 +277,7 @@ void generate(struct dw_hashmap *dw_list, int length){
         do{
             printf("How many words? ");
             scanf("%d", &length);
-        } while (length > 0);
+        } while (length <= 0);
     }
     char *id = calloc(length + 1, sizeof(char));
     srand(time(NULL));
