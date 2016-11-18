@@ -61,12 +61,20 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
         break;
     case 'l':
         arguments->dw_option = LOOK;
+        printf("Lookup is not implemented yet, exiting...\n");
+        exit(0);
         break;
     case 'c':
         arguments->list_option = CREATE;
+#if DEBUG
+        printf("Input file: %s\n", arg);
+#endif
+        arguments_insert(arguments, INPUT_FILE, arg);
         break;
     case 'i':
         arguments->list_option = IMPORT;
+        printf("Import is not implemented yet, exiting...\n");
+        exit(0);
         break;
     case 'u':
         arguments->list = malloc(sizeof(char)*(strlen(arg) + 1));
@@ -78,9 +86,6 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
         break;
     default:
         return ARGP_ERR_UNKNOWN;
-    }
-    if (key != ARGP_KEY_ARG && arg != NULL){
-        arguments_insert(arguments, INPUT_FILE, arg);
     }
     return 0;
 }
@@ -141,7 +146,9 @@ int main(int argc, char **argv){
         }
     }
 
-    printf("%s\n", input_args.list);
+#if DEBUG
+    printf("List file used: %s\n", input_args.list);
+#endif
     if (input_args.use_list){
         free(listpath);
         listpath = calloc(strlen(input_args.list) + 1, sizeof(char));
@@ -153,22 +160,22 @@ int main(int argc, char **argv){
         free(listpath);
         listpath = tmp;
     }
-    printf("listpath: %s\n", listpath);
+#if DEBUG
+    printf("Listpath: %s\n", listpath);
+#endif
 
     char *input_file;
     int g_length = 0;
 
     struct arg_pair *node = input_args.arguments;
-    if (node != NULL){
-        while (node->next != NULL){
-            if (node->type == INPUT_FILE){
-                input_file = node->value;
-            } else if (node->type == PP_LENGTH){
-                char* end;
-                g_length = (int)strtol(node->value, &end, 10);
-            }
-            node = node->next;
+    while (node != NULL){
+        if (node->type == INPUT_FILE){
+            input_file = node->value;
+        } else if (node->type == PP_LENGTH){
+            char* end;
+            g_length = (int)strtol(node->value, &end, 10);
         }
+        node = node->next;
     }
     FILE *list;
 
@@ -215,7 +222,6 @@ int main(int argc, char **argv){
             }
             break;
         case IMPORT:
-            printf("Importing\n");
             list_import(list, input, dw_list);
             break;
         default:
@@ -329,6 +335,7 @@ int list_create(FILE *map, FILE *input_file, struct dw_hashmap *dw_list){
     fseek(input_file, 0, SEEK_END);
     int f_size = ftell(input_file);
     rewind(input_file);
+    dw_list->map = calloc(CONFIG.map_size, sizeof(struct dw_node*));
 
     char *delims = " \n";
     char *chunk = malloc(f_size);
@@ -387,19 +394,11 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
     for (int i = 0; i < map_size; ++i){
         str = strtok(NULL, "\n");
         if (str == NULL){
-            printf("Not enough entries present?\nIteration %d of %d", i, map_size);
+            printf("Not enough entries present?\nIteration %d of %d\n", i, map_size);
             return false;
         }
         char key[key_size];
-        size_t word_size;
         sscanf(str, "%s", key);
-        str = strtok(NULL, "\n");
-        if (str == NULL){
-            printf("Entry not complete? (Word size string missing)\n");
-            return false;
-        }
-        sscanf(str, "%zu", &word_size);
-
         str = strtok(NULL, "\n");
         if (str == NULL){
             printf("Entry not complete? (Word missing)\n");
@@ -426,7 +425,8 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
 bool arguments_insert(struct arguments *arguments, int type, char *arg){
     struct arg_pair *new = malloc(sizeof(struct arg_pair));
     new->type = type;
-    new->value = arg;
+    new->value = calloc(strlen(arg) + 1, sizeof(char));
+    strcpy(new->value, arg);
     new->next = NULL;
 
     struct arg_pair *node = arguments->arguments;
@@ -443,6 +443,7 @@ bool arguments_insert(struct arguments *arguments, int type, char *arg){
 void args_free(struct arg_pair *node){
     if (node != NULL){
         args_free(node->next);
+        free(node->value);
         free(node);
     }
 }

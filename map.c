@@ -131,7 +131,7 @@ void node_write(FILE *fp, struct dw_node *node){
     if (node == NULL){
         return;
     }
-    fprintf(fp, "%s\n%zu\n%s\n",node->value.id, strlen(node->value.value), node->value.value);
+    fprintf(fp, "%s\n%s\n",node->value.id, node->value.value);
     node_write(fp, node->next);
 }
 void map_write(FILE *fp, struct dw_hashmap *map){
