@@ -1,18 +1,22 @@
 #!/bin/sh
+# Copyright (C) 2015-2016 R. Jonsson, E. Jansson
 
 CWD=`pwd`
 
+echo
 if [[ $CWD != *"tests/" ]] ; then
     cd tests/
+    if [[ $? -eq 1 ]] ; then
+        echo "Could not move to subdirectory tests, are you not in project directory?"
+    fi
 fi
 for dir in `ls -d */ | sort -n` ; do
-    echo ${dir}
-    for script in `ls ${dir}*.sh | sort -n` ; do
-        echo "${script}"
-        cd ${dir}
-        ${script}
-        echo
+    cd ${dir}
+    for script in `ls *.sh | sort -n` ; do
+        echo ${script}
+        sh ${script}
     done
+    cd -
     echo
 done
 
