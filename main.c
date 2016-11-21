@@ -27,7 +27,7 @@ struct arguments {
 };
 
 void generate(struct dw_hashmap*, int);
-void lookup(struct dw_hashmap*, char*);
+void lookup(struct dw_hashmap*);
 bool arguments_insert(struct arguments*, int, char*);
 int list_create(FILE*, FILE*, struct dw_hashmap*);
 void list_import(FILE*, FILE*, struct dw_hashmap*);
@@ -61,8 +61,6 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
         break;
     case 'l':
         arguments->dw_option = LOOK;
-        printf("Lookup is not implemented yet, exiting...\n");
-        exit(0);
         break;
     case 'c':
         arguments->list_option = CREATE;
@@ -261,7 +259,7 @@ int main(int argc, char **argv){
             generate(dw_list, g_length);
             break;
         case LOOK:
-            lookup(dw_list, input_file);
+            lookup(dw_list);
             break;
         default:
             printf("dw_option default case reached, exiting.");
@@ -315,7 +313,12 @@ void generate(struct dw_hashmap *dw_list, int length){
     free(pw_id);
     free(passphrase);
 }
-void lookup(struct dw_hashmap *dw_list, char *pw_num){
+void lookup(struct dw_hashmap *dw_list){
+    char pw[50];
+    while (scanf("%s", pw) != EOF){
+        char *ret = map_lookup(dw_list, pw);
+        printf("%s\n", ret);
+    }
 }
 int list_create(FILE *map, FILE *input_file, struct dw_hashmap *dw_list){
     if (!CONFIG.unique){
