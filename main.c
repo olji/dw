@@ -34,7 +34,7 @@ void list_import(FILE*, FILE*, struct dw_hashmap*);
 bool list_parse(FILE*, struct dw_hashmap*);
 void args_free(struct arg_pair*);
 
-const char *argp_program_version = "dw 0.2";
+const char *argp_program_version = "dw 0.3";
 const char *argp_program_bug_address = "<N/A>";
 
 static char doc[] = "dw - Diceware manager";
@@ -80,6 +80,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
         arguments->use_list = true;
         break;
     case ARGP_KEY_ARG:
+        /* TODO: Keep inside span of dw home directory, deny traversion upwards using .. */
         arguments->list = arg;
         break;
     default:
@@ -89,7 +90,6 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
 }
 
 static struct argp_option options[] = {
-    /* TODO: Actually implement the optional word count */
     { "generate", 'g', "PASSPHRASE_WORD_COUNT", OPTION_ARG_OPTIONAL, "Generate a passphrase using LIST", 1 },
     { "lookup", 'l', "DW_NUM", OPTION_ARG_OPTIONAL, "Look up passphrase using LIST", 1 },
     { "import-list", 'i', "FILE", 0, "Import diceware list named LIST", 0 },
@@ -186,6 +186,7 @@ int main(int argc, char **argv){
         list = fopen(listpath, "r");
         if (list != NULL){
             fclose(list);
+            /* TODO: Refuse to delete file if supplied using -u */
             printf("File already exists: %s, delete? [y/n]: ", listpath);
             char ans = 0;
             do{
