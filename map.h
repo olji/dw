@@ -39,6 +39,7 @@ void  map_rearrange(struct dw_hashmap*);
 void  node_insert(struct dw_node**, struct dw_node*);
 void  node_write(FILE*, struct dw_node*);
 void  node_print(struct dw_node *node);
+int   node_count(struct dw_node *node);
 void  node_free(struct dw_node*);
 bool  node_unique(struct dw_node*, char*);
 char *node_lookup(struct dw_node*, char*);

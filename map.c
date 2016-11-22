@@ -15,7 +15,9 @@ int str_hash(char *word, int modval){
     for (int i=0; word[i] != '\0'; ++i){
         word[i] = tolower(word[i]);
         pos += word[i];
-        pos = pos - pos + pow(pos, 2);
+        pos += pos << 2;
+        pos -= pos >> 3;
+        pos ^= pos << 4;
     }
     return pos % modval;
 }
