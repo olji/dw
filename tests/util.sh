@@ -25,7 +25,8 @@ assert() {
     LOGFILE=$4
     touch $LOGFILE
     COMMANDS=$1
-    eval $DWWD/$COMMANDS >> $LOGFILE 2>&1
+    set -o pipefail
+    eval "$DWWD/$COMMANDS 2>&1" | tee $LOGFILE
     STATUSC=$?
 
     MESSAGE=$3
@@ -36,4 +37,5 @@ assert() {
         echo "#NOK#" >> $LOGFILE 2>&1
         fail $MESSAGE
     fi
+    set +o pipefail
 }
