@@ -12,6 +12,13 @@
 
 extern struct dw_config CONFIG;
 
+const char *argp_program_version = "dw 0.4";
+const char *argp_program_bug_address = "<N/A>";
+
+static char doc[] = "dw - Diceware manager";
+
+static char args_doc[] = "[LIST]";
+
 struct arg_pair {
     enum {NONE = 0, INPUT_FILE, PP_LENGTH} type;
     char *value;
@@ -34,13 +41,6 @@ void list_import(FILE*, FILE*, struct dw_hashmap*);
 bool list_parse(FILE*, struct dw_hashmap*);
 void args_free(struct arg_pair*);
 
-const char *argp_program_version = "dw 0.3";
-const char *argp_program_bug_address = "<N/A>";
-
-static char doc[] = "dw - Diceware manager";
-
-static char args_doc[] = "[LIST]";
-
 static error_t parse_opt (int key, char *arg, struct argp_state *state){
     struct arguments *arguments = state->input;
     switch (key){
@@ -54,7 +54,6 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
                     exit(1);
                 }
             }
-            /* check string characters is only numbers 0-9 */
             arguments_insert(arguments, PP_LENGTH, arg);
         } else {
         }
@@ -418,7 +417,7 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
         new->next = NULL;
 #if DEBUG
         printf("map size: %zu\n", CONFIG.map_size);
-        printf("key hash: %d\n", new->key);
+        printf("key hash: %zu\n", new->key);
 #endif
         node_insert(&(dw_list->map[new->key]), new);
     }

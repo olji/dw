@@ -16,7 +16,7 @@ struct node_value{
 };
 /* Hash map used for dw list representations */
 struct dw_node{
-    int key;
+    size_t key;
     struct node_value value;
     struct dw_node *next;
 };
@@ -42,5 +42,6 @@ void  node_print(struct dw_node *node);
 void  node_free(struct dw_node*);
 bool  node_unique(struct dw_node*, char*);
 char *node_lookup(struct dw_node*, char*);
+void  node_rearrange(struct dw_node**, struct dw_node*);
 
 #endif

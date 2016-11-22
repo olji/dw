@@ -126,6 +126,8 @@ void map_free(struct dw_hashmap* map){
     }
     free(map->map);
     free(map);
+    /* dw_hashmap is freed at end, free key as well */
+    free(key);
 }
 void node_write(FILE *fp, struct dw_node *node){
     if (node == NULL){
@@ -141,11 +143,24 @@ void map_write(FILE *fp, struct dw_hashmap *map){
         node_write(fp, map->map[i]);
     }
 }
+void  node_rearrange(struct dw_node **map, struct dw_node *node){
+    if (node == NULL){
+        return;
+    }
+    node_rearrange(map, node->next);
+    node->next = NULL;
+    node->key = str_hash(node->value.id, CONFIG.map_size);
+    node_insert(&map[node->key], node);
+}
 void  map_rearrange(struct dw_hashmap *map){
+    struct dw_node **new_map = calloc(CONFIG.map_size, sizeof(struct dw_node*));
     for (int i = 0; i < CONFIG.map_size; ++i){
         if (map->map[i] != NULL){
+            node_rearrange(new_map, map->map[i]);
         }
     }
+    free(map->map);
+    map->map = new_map;
 }
 
 /* 
@@ -157,7 +172,7 @@ void node_print(struct dw_node *node){
         printf("[NULL]\n");
         return;
     }
-    printf("[%d:[%s:%s]]->", node->key, node->value.id, node->value.value);
+    printf("[%zu:[%s:%s]]->", node->key, node->value.id, node->value.value);
     node_print(node->next);
 }
 void map_print(struct dw_hashmap *map){
