@@ -167,6 +167,14 @@ void  map_rearrange(struct dw_hashmap *map){
  * Mainly used for debugging purposes, may prove useful 
  * for other things however 
  */
+int node_count(struct dw_node *node){
+    int ret = 0;
+    if (node != NULL){
+        ret = 1;
+        ret += node_count(node->next);
+    }
+    return ret;
+}
 void node_print(struct dw_node *node){
     if (node == NULL){
         printf("[NULL]\n");
@@ -177,7 +185,9 @@ void node_print(struct dw_node *node){
 }
 void map_print(struct dw_hashmap *map){
     for (int i = 0; i < CONFIG.map_size; ++i){
-        printf("[%d]->", i);
-        node_print(map->map[i]);
+        if(map->map[i] != NULL){
+            printf("[%d]->", i);
+            printf("%d entries\n", node_count(map->map[i]));
+        }
     }
 }
