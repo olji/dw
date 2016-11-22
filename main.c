@@ -392,9 +392,17 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
     CONFIG.char_set_size = charset_size;
     CONFIG.map_size = map_size;
 
+#if DEBUG
+    printf("Parsing list file...\n");
+#endif
     /* Allocate pointer array now when we know its size */
     dw_list->map = calloc(CONFIG.map_size, sizeof(struct dw_node*));
     for (int i = 0; i < map_size; ++i){
+#if DEBUG
+        if (i%(map_size/10) == 0){
+            printf("Progress: %d%%\n",i/(map_size/100));
+        }
+#endif
         str = strtok(NULL, "\n");
         if (str == NULL){
             printf("Not enough entries present?\nIteration %d of %d\n", i, map_size);
@@ -421,6 +429,9 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
 #endif
         node_insert(&(dw_list->map[new->key]), new);
     }
+#if DEBUG
+    printf("Parsing complete.\n");
+#endif
     free(charset);
     free(chunk);
     return true;
