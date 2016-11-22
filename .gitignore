@@ -2,3 +2,5 @@ dw
 report.tex
 vgcore*
 **/*.log
+**/*.tmp
+**/*.lst
