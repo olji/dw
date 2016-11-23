@@ -1,7 +1,7 @@
 #!/bin/sh
 # Copyright (C) 2015-2016 R. Jonsson, E. Jansson
 
-DWWD=`pwd | sed 's/\/tests.*$//'`
+BIN=`pwd | sed 's/\/tests.*$//'`/dw
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -26,7 +26,7 @@ assert() {
     touch $LOGFILE
     COMMANDS=$1
     set -o pipefail
-    eval "$DWWD/$COMMANDS 2>&1" | tee $LOGFILE
+    eval "$COMMANDS 2>&1" | tee $LOGFILE
     STATUSC=$?
 
     MESSAGE=$3

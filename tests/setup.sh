@@ -48,7 +48,7 @@ fi
 assert 'dw --create-list=${SRC_FILE} --use-list=$LST_FILE' 0 'LIST GENERATION - Complete file' 'gen.log'
 
 echo "Creating list files for testing purposes..."
-head -n25 $LST_FILE table_formatting/incomplete.lst
-tail -n +3 $LST_FILE table_formatting/missing_info.lst
+head -n25 $LST_FILE > table_formatting/incomplete.lst
+tail -n +3 $LST_FILE > table_formatting/missing_info.lst
 cp $LST_FILE invocation/list.lst
 cp $SRC_FILE invocation/src.tmp
