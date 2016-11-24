@@ -8,4 +8,4 @@ debug: main.c
 release: main.c
 	gcc $(CFLAGS) $(SRC_OBJS) $(LIBS) -o dw
 test: debug
-	sh tests/run_tests.sh
+	sh tests/run_tests.sh $(SETUP)

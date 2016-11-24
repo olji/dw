@@ -1,5 +1,8 @@
 #!/bin/sh
 
+if [[ -z $CWD ]]; then
+    CWD=`pwd`
+fi
 if [[ $CWD != *"tests/" ]] ; then
     cd tests/
     if [[ $? -eq 1 ]] ; then
