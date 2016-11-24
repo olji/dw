@@ -1,5 +1,12 @@
 #!/bin/sh
 
+if [[ $CWD != *"tests/" ]] ; then
+    cd tests/
+    if [[ $? -eq 1 ]] ; then
+        echo "Could not move to subdirectory tests, are you not in project directory?"
+    fi
+fi
+
 . ./util.sh
 
 ID_L=5
@@ -52,3 +59,5 @@ head -n25 $LST_FILE > table_formatting/incomplete.lst
 tail -n +3 $LST_FILE > table_formatting/missing_info.lst
 cp $LST_FILE invocation/list.lst
 cp $SRC_FILE invocation/src.tmp
+
+cd $CWD
