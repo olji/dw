@@ -12,7 +12,7 @@
 
 extern struct dw_config CONFIG;
 
-const char *argp_program_version = "dw 0.4";
+const char *argp_program_version = "dw 0.4.1";
 const char *argp_program_bug_address = "<N/A>";
 
 static char doc[] = "dw - Diceware manager";
@@ -377,12 +377,21 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
 #endif
 
     sscanf(str, "%zu-%zu", &key_size, &charset_size);
+    if (key_size == 0 || charset_size == 0){
+        printf("ERR: Missing information about key size or character set length\n");
+        return false;
+    }
 
-    char *charset = malloc(sizeof(char) * (charset_size + 1));
+    char *charset = calloc(charset_size + 1, sizeof(char));
     const int map_size = pow(charset_size, key_size);
 
     str = strtok(NULL, "\n");
     sscanf(str, "%s", charset);
+
+    if (strlen(charset) != charset_size){
+        printf("ERR: Given character set does not correspond to given length of character set, list possibly faulty\n");
+        return false;
+    }
 
     free(CONFIG.char_set);
 
@@ -410,6 +419,11 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
         }
         char key[key_size];
         sscanf(str, "%s", key);
+        size_t p = strcspn(key, CONFIG.char_set);
+        if (p != 0){
+            printf("ERR: Key %s is not valid in charset %s\n", key, CONFIG.char_set);
+            return false;
+        }
         str = strtok(NULL, "\n");
         if (str == NULL){
             printf("Entry not complete? (Word missing)\n");
@@ -423,10 +437,6 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
         strcpy(new->value.id, key);
         new->key = str_hash(key, map_size);
         new->next = NULL;
-#if DEBUG
-        printf("map size: %zu\n", CONFIG.map_size);
-        printf("key hash: %zu\n", new->key);
-#endif
         node_insert(&(dw_list->map[new->key]), new);
     }
 #if DEBUG
