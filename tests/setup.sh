@@ -62,5 +62,6 @@ head -n25 $LST_FILE > table_formatting/incomplete.lst
 tail -n +3 $LST_FILE > table_formatting/missing_info.lst
 cp $LST_FILE invocation/list.lst
 cp $SRC_FILE invocation/src.tmp
+sed '1s/10/15/' list.lst > list_formatting/charset-len-wrong.lst
 
 cd $CWD
