@@ -51,7 +51,6 @@ int read_config(char *homedir){
             scanf("%s", &ans);
         } while (ans != 'y' && ans != 'n');
         return (tolower(ans) == 'y') ? true : false;
-
     }
     fclose(cf);
 
@@ -68,6 +67,65 @@ int read_config(char *homedir){
     cfg = cfg_init(opts, CFGF_NOCASE);
     cfg_parse(cfg, configpath);
 
+    /*
+     * Parse character groups in character set such as [09][az] or similar.
+     * TODO: Error checking for unterminated character groups.
+     * TODO: Ability to define several groups inside same square brackets, e.g. [az09]
+     */
+    char start_char;
+    char end_char;
+    char *full_group;
+    int group_start = 0;
+    enum parse_mode {NORMAL = 0, CHAR_GROUP} p_mode = NORMAL;
+    for (int i = 0; i < strlen(CONFIG.char_set); ++i){
+        switch (p_mode){
+        case NORMAL:
+            if (CONFIG.char_set[i] == '['){
+                if (CONFIG.char_set[i-1] != '\\' &&
+                    strstr(CONFIG.char_set, "]")){
+                    group_start = i;
+                    p_mode = CHAR_GROUP;
+                    break;
+                }
+            }
+            break;
+        case CHAR_GROUP:
+            if (CONFIG.char_set[i] == ']'){
+                if (CONFIG.char_set[i-1] != '\\'){
+                    /* Replace [group] with variable full_group */
+                    char *end_string = calloc(strlen(&CONFIG.char_set[i]), sizeof(char));
+                    strcpy(end_string, &CONFIG.char_set[i+1]);
+                    char *new_string = calloc(group_start + strlen(end_string) + strlen(full_group), sizeof(char));
+                    strncpy(new_string, CONFIG.char_set, group_start);
+                    strcat(new_string, full_group);
+                    strcat(new_string, end_string);
+                    free(CONFIG.char_set);
+                    CONFIG.char_set = new_string;
+
+                    /* Exit point of CHAR_GROUP (Unless unterminated character group */
+                    free(end_string);
+                    free(full_group);
+
+                    p_mode = NORMAL;
+                    break;
+                }
+            }
+            start_char = CONFIG.char_set[i++];
+            end_char = CONFIG.char_set[i];
+            /* Switch character order if start_char appears after end_char in ascii table */
+            if (start_char > end_char){
+                char tmp = start_char;
+                start_char = end_char;
+                end_char = tmp;
+            }
+            full_group = malloc(sizeof(char) * (abs(end_char - start_char) + 1));
+    full_group[end_char - start_char + 1] = '\0';
+            for (int i = 0; start_char <= end_char; ++i, ++start_char){
+                full_group[i] = start_char;
+            }
+        }
+    }
+
     CONFIG.char_set_size = strlen(CONFIG.char_set);
     CONFIG.map_size = pow(CONFIG.char_set_size, CONFIG.key_length);
 
@@ -80,7 +138,7 @@ bool write_default_config(char *configpath){
     if (cf == NULL){
         printf("Could not open/create file %s for writing\n", configpath);
     }
-    fprintf(cf, "# The list used if omitted on command line\ndefault-list = \"%s\"\n# Character set used for word keys of diceware lists created from using -c\ncharacter-set = \"%s\"\n# Length of key for every word during creation of diceware lists by using -c\nkey-length = %ld\n# If true, enforces the need of unique words in the diceware list, \n# HIGHLY RECOMMENDED to leave true as duplicate words weaken the security of generated passphrases\nunique-words = %s\n# Minimum word length of each word in the diceware list, \n# it is recommended to have a length of at least 14 characters, \n# including spaces, for a passphrase of 5 words and 17 characters for \n# 6 words, making a minimum word length of 2 ensure every passphrase \n# should follow that length, if set to 1 it is recommended to manually \n# ensure that the passphrase keeps a good length (Average of two characters per word or higher).\nmin-word-length = %ld",CONFIG.default_list, CONFIG.char_set, CONFIG.key_length, (CONFIG.unique ? "true": "false"), CONFIG.word_min_len);
+    fprintf(cf, "# The list used if omitted on command line\ndefault-list = \"%s\"\n# Character set used for word keys of diceware lists created from using -c, character groups can be specified, e.g. [09] will result in a string of every character between the characters, including the start and end points\ncharacter-set = \"%s\"\n# Length of key for every word during creation of diceware lists by using -c\nkey-length = %ld\n# If true, enforces the need of unique words in the diceware list, \n# HIGHLY RECOMMENDED to leave true as duplicate words weaken the security of generated passphrases\nunique-words = %s\n# Minimum word length of each word in the diceware list, \n# it is recommended to have a length of at least 14 characters, \n# including spaces, for a passphrase of 5 words and 17 characters for \n# 6 words, making a minimum word length of 2 ensure every passphrase \n# should follow that length, if set to 1 it is recommended to manually \n# ensure that the passphrase keeps a good length (Average of two characters per word or higher).\nmin-word-length = %ld",CONFIG.default_list, CONFIG.char_set, CONFIG.key_length, (CONFIG.unique ? "true": "false"), CONFIG.word_min_len);
     fclose(cf);
     return true;
 }
