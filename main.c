@@ -282,6 +282,9 @@ int main(int argc, char **argv){
     }
 
     /* Cleanup */
+    if (input_args.ext_list){
+        free(input_args.list);
+    }
     free(listpath);
     map_free(dw_list);
     args_free(input_args.arguments);

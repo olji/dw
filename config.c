@@ -99,8 +99,8 @@ int read_config(char *homedir){
         switch (p_mode){
         case NORMAL:
             if (CONFIG.char_set[i] == '['){
-                if (CONFIG.char_set[i-1] != '\\' &&
-                    strstr(CONFIG.char_set, "]")){
+                if (i == 0 || (CONFIG.char_set[i-1] != '\\' &&
+                    strstr(CONFIG.char_set, "]"))){
                     group_start = i;
                     p_mode = CHAR_GROUP;
                     break;
@@ -113,7 +113,7 @@ int read_config(char *homedir){
                     /* Replace [group] with variable full_group */
                     char *end_string = calloc(strlen(&CONFIG.char_set[i]), sizeof(char));
                     strcpy(end_string, &CONFIG.char_set[i+1]);
-                    char *new_string = calloc(group_start + strlen(end_string) + strlen(full_group), sizeof(char));
+                    char *new_string = calloc(group_start + strlen(end_string) + strlen(full_group) + 1, sizeof(char));
                     strncpy(new_string, CONFIG.char_set, group_start);
                     strcat(new_string, full_group);
                     strcat(new_string, end_string);
@@ -136,8 +136,8 @@ int read_config(char *homedir){
                 start_char = end_char;
                 end_char = tmp;
             }
-            full_group = malloc(sizeof(char) * (abs(end_char - start_char) + 1));
-    full_group[end_char - start_char + 1] = '\0';
+            full_group = malloc(sizeof(char) * (abs(end_char - start_char) + 2));
+            full_group[end_char - start_char + 1] = '\0';
             for (int i = 0; start_char <= end_char; ++i, ++start_char){
                 full_group[i] = start_char;
             }
