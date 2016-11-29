@@ -125,7 +125,7 @@ char *node_lookup(struct dw_node *node, char *id){
 char *map_lookup(struct dw_hashmap *map, char *id){
     char *ret = node_lookup(map->map[str_hash(id, CONFIG.map_size)], id);
     if (strcmp(ret, "") == 0){
-        printf("ERR: Could not find '%s' in hash %d\n", id, str_hash(id, CONFIG.map_size));
+        fprintf(stderr, "ERR: Could not find '%s' in hash %d\n", id, str_hash(id, CONFIG.map_size));
     }
     return ret;
 }

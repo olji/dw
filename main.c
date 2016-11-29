@@ -69,7 +69,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
         if (arg != NULL){
             for (int i = 0; i < strlen(arg); ++i){
                 if (arg[i] < '0' || arg[i] > '9'){
-                    printf("ERR: Optional parameter to -g (--generate) should only be integers\n");
+                    fprintf(stderr, "ERR: Optional parameter to -g (--generate) should only be integers\n");
                     exit(1);
                 }
             }
@@ -181,7 +181,7 @@ int main(int argc, char **argv){
             input_args.list = malloc(sizeof(char) * (strlen(CONFIG.default_list) + 1));
             strcpy(input_args.list, CONFIG.default_list);
         } else {
-            printf("ERROR: default list not set, set default list in configuration or provide list name manually\n");
+            fprintf(stderr, "ERROR: default list not set, set default list in configuration or provide list name manually\n");
             return 1;
         }
     }
@@ -252,7 +252,7 @@ int main(int argc, char **argv){
         }
         FILE *input = fopen(input_file, "r");
         if (input == NULL){
-            printf("ERROR: Could not open input file %s\n", input_file);
+            fprintf(stderr, "ERROR: Could not open input file %s\n", input_file);
             return 1;
         }
         switch (input_args.list_option){
@@ -279,7 +279,7 @@ int main(int argc, char **argv){
         if (input_args.list_option == LIST_NONE){
             list = fopen(listpath, "r");
             if (list == NULL){
-                printf("ERROR: Failed to open list %s for reading.\n", listpath);
+                fprintf(stderr, "ERROR: Failed to open list %s for reading.\n", listpath);
                 return 1;
             }
 #if DEBUG
@@ -403,7 +403,7 @@ int list_create(FILE *map, FILE *input_file, struct dw_hashmap *dw_list){
         str = strtok(NULL, delims);
     }
     if (!map_filled()){
-        printf("ERR: Could not gather %zu %swords from input file, lower key size, present a file with more %swords or reduce the size of your character set.%s\n", CONFIG.map_size, (CONFIG.unique?"unique ":""), (CONFIG.unique?"unique ":""), (CONFIG.unique?"\nEnabling duplicate words by setting unique_words to false in may result in gathering enough words, but WILL weaken the security of passphrases generated":""));
+        fprintf(stderr, "ERR: Could not gather %zu %swords from input file, lower key size, present a file with more %swords or reduce the size of your character set.%s\n", CONFIG.map_size, (CONFIG.unique?"unique ":""), (CONFIG.unique?"unique ":""), (CONFIG.unique?"\nEnabling duplicate words by setting unique_words to false in may result in gathering enough words, but WILL weaken the security of passphrases generated":""));
         return -1;
     }
     free(chunk);
@@ -427,7 +427,7 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
 
     sscanf(str, "%zu-%zu", &key_size, &charset_size);
     if (key_size == 0 || charset_size == 0){
-        printf("ERR: Missing information about key size or character set length\n");
+        fprintf(stderr, "ERR: Missing information about key size or character set length\n");
         return false;
     }
 
@@ -438,7 +438,7 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
     sscanf(str, "%s", charset);
 
     if (strlen(charset) != charset_size){
-        printf("ERR: Given character set does not correspond to given length of character set, list possibly faulty\n");
+        fprintf(stderr, "ERR: Given character set does not correspond to given length of character set, list possibly faulty\n");
         return false;
     }
 
@@ -470,7 +470,7 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
         sscanf(str, "%s", key);
         size_t p = strcspn(key, CONFIG.char_set);
         if (p != 0){
-            printf("ERR: Key %s is not valid in charset %s\n", key, CONFIG.char_set);
+            fprintf(stderr, "ERR: Key %s is not valid in charset %s\n", key, CONFIG.char_set);
             return false;
         }
         str = strtok(NULL, "\n");
