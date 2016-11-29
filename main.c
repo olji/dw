@@ -46,7 +46,7 @@ struct arg_pair {
 struct arguments {
     enum {LIST_NONE = 0, CREATE, IMPORT} list_option;
     enum {DW_NONE = 0, GEN, LOOK} dw_option;
-    bool use_list;
+    bool ext_list;
     char *list;
     struct arg_pair *arguments;
 };
@@ -93,7 +93,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
     case 'u':
         arguments->list = malloc(sizeof(char)*(strlen(arg) + 1));
         strcpy(arguments->list, arg);
-        arguments->use_list = true;
+        arguments->ext_list = true;
         break;
     case ARGP_KEY_ARG:
         /* TODO: Keep inside span of dw home directory, deny traversion upwards using .. */
@@ -160,7 +160,7 @@ int main(int argc, char **argv){
 #if DEBUG
     printf("List file used: %s\n", input_args.list);
 #endif
-    if (input_args.use_list){
+    if (input_args.ext_list){
         free(listpath);
         listpath = calloc(strlen(input_args.list) + 1, sizeof(char));
         strcat(listpath, input_args.list);
