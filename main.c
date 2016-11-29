@@ -47,7 +47,9 @@ struct arguments {
     enum {LIST_NONE = 0, CREATE, IMPORT} list_option;
     enum {DW_NONE = 0, GEN, LOOK} dw_option;
     bool ext_list;
+    bool ext_cfg;
     char *list;
+    char *cfg;
     struct arg_pair *arguments;
 };
 
@@ -95,6 +97,11 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
         strcpy(arguments->list, arg);
         arguments->ext_list = true;
         break;
+    case 'U':
+        arguments->cfg = malloc(sizeof(char) * (strlen(arg) + 1));
+        strcpy(arguments->cfg, arg);
+        arguments->ext_cfg = true;
+        break;
     case ARGP_KEY_ARG:
         /* TODO: Keep inside span of dw home directory, deny traversion upwards using .. */
         arguments->list = arg;
@@ -111,6 +118,7 @@ static struct argp_option options[] = {
     { "import-list", 'i', "FILE", 0, "Import diceware list named LIST", 0 },
     { "create-list", 'c', "FILE", 0, "Create a new diceware list named LIST", 0 },
     { "use-list", 'u', "LIST", 0, "Use given LIST not present in home directory of dw", 0 },
+    { "use-config", 'U', "CONFIG", 0, "Use given CONFIG not necessarily present in home directory of dw", 0 },
     { 0 }
 };
 
@@ -127,7 +135,15 @@ int main(int argc, char **argv){
         return 0;
     }
 
-    struct arguments input_args = {LIST_NONE, DW_NONE, false, NULL, NULL, 0, false};
+    struct arguments input_args = {
+        LIST_NONE, /* list_option */
+        DW_NONE, /* dw_option */
+        false, /* ext_list */
+        false, /* ext_cfg */
+        "default", /* list_file */
+        "dw.conf", /* cfg_file */
+        NULL, /* arguments */
+    };
     argp_parse (&argp, argc, argv, 0, 0, &input_args);
     char *home = getenv("DW_HOME");
     char *listpath;
@@ -141,7 +157,20 @@ int main(int argc, char **argv){
         listpath = malloc(sizeof(char) * (strlen(home) + 1));
         strcat(listpath, home);
     }
-    int exit_status = read_config(listpath);
+
+    char *cfg_path;
+    if (input_args.ext_cfg){
+        cfg_path = input_args.cfg;
+    } else {
+        cfg_path = malloc(sizeof(char) * (strlen(listpath) + strlen(input_args.cfg) + 1));
+        strcpy(cfg_path, listpath);
+        printf("%s -- %s\n", cfg_path, listpath);
+        strcat(cfg_path, input_args.cfg);
+        printf("%s -- %s\n", cfg_path, input_args.cfg);
+    }
+    printf("cfg_path: %s\n", cfg_path);
+
+    int exit_status = read_config(cfg_path);
     if (exit_status < 1){
         return abs(exit_status);
     }
@@ -284,6 +313,9 @@ int main(int argc, char **argv){
     /* Cleanup */
     if (input_args.ext_list){
         free(input_args.list);
+    }
+    if (input_args.ext_cfg){
+        free(input_args.cfg);
     }
     free(listpath);
     map_free(dw_list);

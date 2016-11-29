@@ -25,13 +25,12 @@
 
 #include "config.h"
 
-#define CONFIGFILE "dw.conf"
 #define DEF_LIST "default"
 #define DEF_CHARSET "0123456789"
 
 extern struct dw_config CONFIG;
 
-int read_config(char *homedir){
+int read_config(char *configpath){
     /* Set default values */
     CONFIG.default_list = malloc(sizeof(char) * (strlen(DEF_LIST) + 1));
     strcpy(CONFIG.default_list, DEF_LIST);
@@ -41,9 +40,6 @@ int read_config(char *homedir){
     CONFIG.unique = true;
     CONFIG.word_min_len = 2;
 
-    char *configpath = calloc(strlen(homedir) + strlen(CONFIGFILE) + 1, sizeof(char));
-    strcpy(configpath, homedir);
-    strcat(configpath, CONFIGFILE);
     FILE *cf = fopen(configpath, "r");
     if (cf == NULL){
         printf("Could not open %s, create default configuration file? [y/n]: ", configpath);
