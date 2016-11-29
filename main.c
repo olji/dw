@@ -49,7 +49,6 @@ struct arguments {
     bool use_list;
     char *list;
     struct arg_pair *arguments;
-    bool parse_failure;
 };
 
 void generate(struct dw_hashmap*, int);
@@ -69,7 +68,6 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
             for (int i = 0; i < strlen(arg); ++i){
                 if (arg[i] < '0' || arg[i] > '9'){
                     printf("ERR: Optional parameter to -g (--generate) should only be integers\n");
-                    arguments->parse_failure = true;
                     exit(1);
                 }
             }
@@ -131,9 +129,6 @@ int main(int argc, char **argv){
 
     struct arguments input_args = {LIST_NONE, DW_NONE, false, NULL, NULL, 0, false};
     argp_parse (&argp, argc, argv, 0, 0, &input_args);
-    if (input_args.parse_failure){
-        return 1;
-    }
     char *home = getenv("DW_HOME");
     char *listpath;
     if (home == NULL){
