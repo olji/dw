@@ -144,7 +144,6 @@ int read_config(char *configpath){
     CONFIG.map_size = pow(CONFIG.char_set_size, CONFIG.key_length);
 
     cfg_free(cfg);
-    free(configpath);
     return true;
 }
 bool write_default_config(char *configpath){
