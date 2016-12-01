@@ -53,6 +53,9 @@ struct arguments {
     struct arg_pair *arguments;
 };
 
+void *malloc_assert(size_t);
+void *calloc_assert(size_t, size_t);
+void mem_assert(void*);
 void generate(struct dw_hashmap*, int);
 void lookup(struct dw_hashmap*);
 bool arguments_insert(struct arguments*, int, char*);
@@ -519,4 +522,20 @@ void args_free(struct arg_pair *node){
         free(node->value);
         free(node);
     }
+}
+void mem_assert(void *pointer){
+    if (pointer == NULL){
+        fprintf(stderr, "ERR: Allocation error\n");
+        exit(1);
+    }
+}
+void *malloc_assert(size_t size){
+    void *mem = malloc(size);
+    mem_assert(mem);
+    return mem;
+}
+void *calloc_assert(size_t amount, size_t size){
+    void *mem = calloc(amount, size);
+    mem_assert(mem);
+    return mem;
 }
