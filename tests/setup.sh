@@ -63,5 +63,6 @@ tail -n +3 $LST_FILE > list_formatting/missing_info.lst
 cp $LST_FILE invocation/list.lst
 cp $SRC_FILE invocation/src.tmp
 sed '1s/10/15/' list.lst > list_formatting/charset-len-wrong.lst
+sed 's/word53432//' list.lst > list_formatting/missing-line-entry.lst
 
 cd $CWD
