@@ -3,18 +3,47 @@
 . ../util.sh
 
 rm invocation_*.log
+rm invocation_*.lst
 
-assert '$BIN -g5 --use-list=list.lst' 0 \
-    'INVOCATION - Standard generation with --use-list' 'invocation_use-list.log'
-assert 'echo "y" | $BIN --create-list=src.tmp --use-list=new_list.lst -g5' 0 \
-    'INVOCATION - List create and passphrase generate chaining 1' 'invocation_chaining-1.log'
-assert 'echo "y" | $BIN --use-list=new_list.lst -g5 --create-list=src.tmp' 0 \
-    'INVOCATION - List create and passphrase generate chaining 2' 'invocation_chaining-2.log'
-assert 'echo "y" | $BIN -g5 --create-list=src.tmp --use-list=new_list.lst' 0 \
-    'INVOCATION - List create and passphrase generate chaining 3' 'invocation_chaining-3.log'
-assert 'echo "42342 12345 83723" | $BIN --use-list=list.lst --lookup | grep "word24324"' 0 \
-    'INVOCATION - Passphrase lookup' 'invocation_lookup.log'
-assert 'echo "y" | $BIN --create-list=src.tmp --use-list=c_groups.lst --use-config=c_groups.conf && cat c_groups.lst | grep "ajibe"' 0 \
-    'INVOCATION - Character set groups' 'invocation_cgroup.log'
-assert 'echo "y" | $BIN --create-list=src.tmp --use-list=alloc_err.lst --use-config=alloc_error.conf' 1 \
-    'INVOCATION - Memory allocation error' 'invocation_allocation-error.log'
+PW_ID=[0-9][0-9][0-9][0-9][0-9]
+# Use external list
+assert '$BIN -g5 --use-list=list.lst' \
+    'grep "$PW_ID\s$PW_ID\s$PW_ID\s$PW_ID\s$PW_ID" $OUTFILE' \
+    0 \
+    'INVOCATION - Standard generation with --use-list' \
+    'invocation_use-list.log'
+# Chaining 1
+assert 'echo "y" | $BIN --create-list=src.tmp --use-list=invocation_new_list.lst -g5' \
+    'ls | grep new_list.lst' \
+    0 \
+    'INVOCATION - List create and passphrase generate chaining 1' \
+    'invocation_chaining-1.log'
+# Chaining 2
+assert 'echo "y" | $BIN --use-list=invocation_new_list.lst -g5 --create-list=src.tmp' \
+    'ls | grep new_list.lst' \
+    0 \
+    'INVOCATION - List create and passphrase generate chaining 2' \
+    'invocation_chaining-2.log'
+# Chaining 3
+assert 'echo "y" | $BIN -g5 --create-list=src.tmp --use-list=invocation_new_list.lst' \
+    'ls | grep new_list.lst' \
+    0 \
+    'INVOCATION - List create and passphrase generate chaining 3' \
+    'invocation_chaining-3.log'
+# Lookup
+assert 'echo "42342 12345 83723" | $BIN --use-list=list.lst --lookup' \
+    'grep "word24324" output' 0 \
+    'INVOCATION - Passphrase lookup' \
+    'invocation_lookup.log'
+# Character groups
+assert 'echo "y" | $BIN --create-list=src.tmp --use-list=invocation_c_groups.lst --use-config=c_groups.conf' \
+    'grep "ajibe" invocation_c_groups.lst' \
+    0 \
+    'INVOCATION - Character set groups' \
+    'invocation_cgroup.log'
+# Allocation error
+assert 'echo "y" | $BIN --create-list=src.tmp --use-list=invocation_alloc_err.lst --use-config=alloc_error.conf' \
+    'grep "Allocation error" $OUTFILE' \
+    0 \
+    'INVOCATION - Memory allocation error' \
+    'invocation_allocation-error.log'
