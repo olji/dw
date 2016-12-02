@@ -167,9 +167,7 @@ int main(int argc, char **argv){
     } else {
         cfg_path = malloc_assert(sizeof(char) * (strlen(listpath) + strlen(input_args.cfg) + 1));
         strcpy(cfg_path, listpath);
-        printf("%s -- %s\n", cfg_path, listpath);
         strcat(cfg_path, input_args.cfg);
-        printf("%s -- %s\n", cfg_path, input_args.cfg);
     }
     printf("cfg_path: %s\n", cfg_path);
 
