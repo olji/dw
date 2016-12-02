@@ -6,12 +6,18 @@ rm invocation_*.log
 rm invocation_*.lst
 
 PW_ID=[0-9][0-9][0-9][0-9][0-9]
+PW_WORD=[a-zA-Z0-9]*
 # Use external list
 assert '$BIN -g5 --use-list=list.lst' \
     'grep "$PW_ID\s$PW_ID\s$PW_ID\s$PW_ID\s$PW_ID" $OUTFILE' \
     0 \
-    'INVOCATION - Standard generation with --use-list' \
-    'invocation_use-list.log'
+    'INVOCATION - Standard generation with --use-list: Passphrase IDs' \
+    'invocation_use-list-id.log'
+assert '$BIN -g5 --use-list=list.lst' \
+    'grep "Passphrase: $PW_WORD\s$PW_WORD\s$PW_WORD\s$PW_WORD\s$PW_WORD" $OUTFILE' \
+    0 \
+    'INVOCATION - Standard generation with --use-list: Passphrase words' \
+    'invocation_use-list-word.log'
 # Chaining 1
 assert 'echo "y" | $BIN --create-list=src.tmp --use-list=invocation_new_list.lst -g5' \
     'ls | grep new_list.lst' \
