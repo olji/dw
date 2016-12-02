@@ -4,7 +4,7 @@
 rm -f lst-format*.log
 
 assert '$BIN --use-list=incomplete.lst -g5' \
-    'grep "Entry not complete" $OUTFILE' \
+    'grep "Not enough entries" $OUTFILE' \
     0 \
     'LIST FORMAT - Entry completeness' \
     'lst-format_entry-complete.log'

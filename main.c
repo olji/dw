@@ -31,7 +31,7 @@
 
 extern struct dw_config CONFIG;
 
-const char *argp_program_version = "dw 0.4.2";
+const char *argp_program_version = "dw 0.4.3";
 const char *argp_program_bug_address = "<N/A>";
 
 static char doc[] = "dw - Diceware manager";
@@ -476,26 +476,34 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
 #endif
         str = strtok(NULL, "\n");
         if (str == NULL){
-            printf("Not enough entries present?\nIteration %d of %d\n", i, map_size);
+            fprintf(stderr, "ERR: Not enough entries present?\nIteration %d of %d\n", i, map_size);
             return false;
         }
         char key[key_size];
-        sscanf(str, "%s", key);
+        /*
+         * Since str should be formatted as 'key word', removing the key
+         * length from the string should give the length of the word, null terminator included.
+         */
+        char *word = malloc_assert(sizeof(char) * (strlen(str) - key_size));
+
+        if (sscanf(str, "%s %s", key, word) != 2){
+            fprintf(stderr, "ERR: Failed to read either key or word in list\n");
+            return false;
+        }
         size_t p = strcspn(key, CONFIG.char_set);
         if (p != 0){
             fprintf(stderr, "ERR: Key %s is not valid in charset %s\n", key, CONFIG.char_set);
             return false;
         }
-        str = strtok(NULL, "\n");
-        if (str == NULL){
-            printf("Entry not complete? (Word missing)\n");
+        if (strlen(word) != strlen(str) - key_size - 1){
+            fprintf(stderr, "ERR: Unexpected word length, possibly more than two words per line \n");
             return false;
         }
 
         struct dw_node *new = malloc_assert(sizeof(struct dw_node));
         new->value.id = malloc_assert(sizeof(char) * (key_size + 1));
-        new->value.value = malloc_assert(sizeof(char) * (strlen(str) + 1));
-        strcpy(new->value.value, str);
+        new->value.value = malloc_assert(sizeof(char) * (strlen(word) + 1));
+        strcpy(new->value.value, word);
         strcpy(new->value.id, key);
         new->key = str_hash(key, map_size);
         new->next = NULL;
