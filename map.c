@@ -163,7 +163,7 @@ void map_write(FILE *fp, struct dw_hashmap *map){
         node_write(fp, map->map[i]);
     }
 }
-void  node_rearrange(struct dw_node **map, struct dw_node *node){
+void node_rearrange(struct dw_node **map, struct dw_node *node){
     if (node == NULL){
         return;
     }
@@ -172,7 +172,7 @@ void  node_rearrange(struct dw_node **map, struct dw_node *node){
     node->key = str_hash(node->value.id, CONFIG.map_size);
     node_insert(&map[node->key], node);
 }
-void  map_rearrange(struct dw_hashmap *map){
+void map_rearrange(struct dw_hashmap *map){
     struct dw_node **new_map = calloc(CONFIG.map_size, sizeof(struct dw_node*));
     for (int i = 0; i < CONFIG.map_size; ++i){
         if (map->map[i] != NULL){
