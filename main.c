@@ -340,13 +340,13 @@ void generate(struct dw_hashmap *dw_list, int length){
     char *id = malloc_assert(sizeof(char) * (CONFIG.key_length + 1));
     srand(time(NULL));
     char *passphrase = calloc_assert(1, sizeof(char));
-    char *pw_id = malloc_assert(sizeof(char) * ((length*CONFIG.key_length) + length + 1));
+    char *pw_id = calloc_assert((length*CONFIG.key_length) + length + 1, sizeof(char));
 
     for (int i = 0; i < length; ++i){
         for (int j = 0; j < CONFIG.key_length; ++j){
             id[j] = CONFIG.char_set[rand()%CONFIG.char_set_size];
         }
-        strcpy(pw_id, id);
+        strcat(pw_id, id);
         strcat(pw_id, " ");
 
         char *found_word = map_lookup(dw_list, id);
