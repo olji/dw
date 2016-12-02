@@ -106,8 +106,13 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
         arguments->ext_cfg = true;
         break;
     case ARGP_KEY_ARG:
-        /* TODO: Keep inside span of dw home directory, deny traversion upwards using .. */
-        arguments->list = arg;
+        /* Check for going upwards in directories or starting from root */
+        if (strstr(arg, "..") == NULL && arg[0] != '/'){
+            arguments->list = arg;
+        } else {
+            fprintf(stderr, "ERR: List files outside of dw home directory should be supplied with -u\n");
+            exit(1);
+        }
         break;
     default:
         return ARGP_ERR_UNKNOWN;
@@ -234,7 +239,10 @@ int main(int argc, char **argv){
         list = fopen(listpath, "r");
         if (list != NULL){
             fclose(list);
-            /* TODO: Refuse to delete file if supplied using -u */
+            if (input_args.ext_list){
+                fprintf(stderr, "File already exists\n");
+                return 1;
+            }
             printf("File already exists: %s, delete? [y/n]: ", listpath);
             char ans = 0;
             do{
