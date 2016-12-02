@@ -59,8 +59,8 @@ void mem_assert(void*);
 void generate(struct dw_hashmap*, int);
 void lookup(struct dw_hashmap*);
 bool arguments_insert(struct arguments*, int, char*);
-int list_create(FILE*, FILE*, struct dw_hashmap*);
-void list_import(FILE*, FILE*, struct dw_hashmap*);
+int list_create(FILE*, struct dw_hashmap*);
+void list_import(FILE*, struct dw_hashmap*);
 bool list_parse(FILE*, struct dw_hashmap*);
 void args_free(struct arg_pair*);
 
@@ -271,13 +271,13 @@ int main(int argc, char **argv){
         }
         switch (input_args.list_option){
         case CREATE:;
-            exit_status = list_create(list, input, dw_list);
+            exit_status = list_create(input, dw_list);
             if (exit_status < 1){
                 return abs(exit_status);
             }
             break;
         case IMPORT:
-            list_import(list, input, dw_list);
+            list_import(input, dw_list);
             break;
         default:
             printf("list_option default case reached, exiting.\n");
@@ -382,7 +382,7 @@ void lookup(struct dw_hashmap *dw_list){
         printf("%s\n", ret);
     }
 }
-int list_create(FILE *map, FILE *input_file, struct dw_hashmap *dw_list){
+int list_create(FILE *input_file, struct dw_hashmap *dw_list){
     if (!CONFIG.unique){
         printf("NOTE: dw is currently set to NOT enforce unique words in the diceware list, which may result in duplicate entries, really continue? [y/n]: ");
         char ans = 0;
@@ -422,7 +422,7 @@ int list_create(FILE *map, FILE *input_file, struct dw_hashmap *dw_list){
     free(chunk);
     return 1;
 }
-void list_import(FILE *list, FILE *input_file, struct dw_hashmap *dw_list){
+void list_import(FILE *input_file, struct dw_hashmap *dw_list){
 }
 bool list_parse(FILE *list, struct dw_hashmap *dw_list){
     fseek(list, 0, SEEK_END);
