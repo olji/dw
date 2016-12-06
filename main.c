@@ -476,29 +476,31 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
             printf("Progress: %d%%\n",i/(map_size/100));
         }
 #endif
-        str = strtok(NULL, "\n");
+        str = strtok(NULL, " ");
         if (str == NULL){
             fprintf(stderr, "ERR: Not enough entries present?\nIteration %d of %d\n", i, map_size);
             return false;
         }
+        if (strlen(str) != key_size){
+            fprintf(stderr, "ERR: Length of key %s not consistent with given length of file", str);
+        }
         char key[key_size];
+        strcpy(key, str);
+        str = strtok(NULL, "\n");
+        if (str == NULL){
+            fprintf(stderr, "ERR: Word missing from entry.\nIteration %d of %d\n", i, map_size);
+            return false;
+        }
         /*
          * Since str should be formatted as 'key word', removing the key
          * length from the string should give the length of the word, null terminator included.
          */
-        char *word = malloc_assert(sizeof(char) * (strlen(str) - key_size));
+        char *word = malloc_assert(sizeof(char) * (strlen(str) + 1));
+        strcpy(word, str);
 
-        if (sscanf(str, "%s %s", key, word) != 2){
-            fprintf(stderr, "ERR: Failed to read either key or word in list\n");
-            return false;
-        }
         size_t p = strcspn(key, CONFIG.char_set);
         if (p != 0){
             fprintf(stderr, "ERR: Key %s is not valid in charset %s\n", key, CONFIG.char_set);
-            return false;
-        }
-        if (strlen(word) != strlen(str) - key_size - 1){
-            fprintf(stderr, "ERR: Unexpected word length, possibly more than two words per line \n");
             return false;
         }
 

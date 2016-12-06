@@ -19,7 +19,7 @@ assert '$BIN --use-list=charset-len-wrong.lst -g5' \
     'LIST FORMAT - Unequal character set length' \
     'lst-format_charset-len.log'
 assert '$BIN --use-list=missing-line-entry.lst -g5'\
-    'grep "Failed to read either" $OUTFILE' \
+    'grep "Not enough entries present" $OUTFILE' \
     0 \
     'LIST FORMAT - Missing line entry' \
     'lst-format_missing-line-entry.log'
