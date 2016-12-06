@@ -174,7 +174,9 @@ int main(int argc, char **argv){
         strcpy(cfg_path, listpath);
         strcat(cfg_path, input_args.cfg);
     }
+#if DEBUG
     printf("cfg_path: %s\n", cfg_path);
+#endif
 
     int exit_status = read_config(cfg_path);
     /*
