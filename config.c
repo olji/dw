@@ -34,10 +34,10 @@ extern struct dw_config CONFIG;
 
 int read_config(char *configpath){
     /* Set default values */
-    CONFIG.default_list = malloc_assert(sizeof(char) * (strlen(DEF_LIST) + 1));
+    CONFIG.default_list = str_malloc(strlen(DEF_LIST));
     strcpy(CONFIG.default_list, DEF_LIST);
     CONFIG.key_length = 5;
-    CONFIG.char_set = malloc_assert(sizeof(char) * (strlen(DEF_CHARSET) + 1));
+    CONFIG.char_set = str_malloc(strlen(DEF_CHARSET));
     strcpy(CONFIG.char_set, DEF_CHARSET);
     CONFIG.unique = 1;
     CONFIG.word_min_len = 2;
@@ -110,7 +110,7 @@ int read_config(char *configpath){
     const char *def_list_string;
     if (config_lookup_string(&cfg, "default-list", &def_list_string)){
         free(CONFIG.default_list);
-        CONFIG.default_list = malloc_assert(sizeof(char) * (strlen(def_list_string) + 1));
+        CONFIG.default_list = str_malloc(strlen(def_list_string));
         strcpy(CONFIG.default_list, def_list_string);
     }
     if (config_lookup_string(&cfg, "character-set", &charset_string)){
@@ -126,7 +126,7 @@ int read_config(char *configpath){
         for (int i = 0; i <= strlen(charset_string); ++i){
             /* If end of string reached, copy uncollected characters */
             if (charset_string[i] == '\0' && str_part_start < i){
-                char *tmp = malloc_assert(sizeof(char) * (strlen(full_character_set) + (i - str_part_start) + 1));
+                char *tmp = str_malloc(strlen(full_character_set) + (i - str_part_start));
                 strcpy(tmp, full_character_set);
                 strcat(tmp, &charset_string[str_part_start]);
                 free(full_character_set);
@@ -142,7 +142,7 @@ int read_config(char *configpath){
                             /* Copy the string before the character '[' into full group */
                             if (i != str_part_start){
                                 char *tmp;
-                                tmp = malloc_assert(sizeof(char) * (strlen(full_character_set) + (i - str_part_start)));
+                                tmp = str_malloc(strlen(full_character_set) + (i - str_part_start) - 1);
                                 strcpy(tmp, full_character_set);
                                 strncat(tmp, charset_string, i - (str_part_start));
                                 free(full_character_set);
@@ -158,7 +158,7 @@ int read_config(char *configpath){
                     if (charset_string[i] == ']' &&
                         charset_string[i - 1] != '\\'){
                         /* Append all expanded groups stored in full_group into full_character_set */
-                        char *tmp = malloc_assert(sizeof(char) * (strlen(full_group) + strlen(full_character_set) + 2));
+                        char *tmp = str_malloc(strlen(full_group) + strlen(full_character_set) + 1);
                         strcpy(tmp, full_character_set);
                         strcat(tmp, full_group);
                         free(full_group);
@@ -177,7 +177,7 @@ int read_config(char *configpath){
                         start_char = end_char;
                         end_char = tmp;
                     }
-                    char *group_part = malloc_assert(sizeof(char) * (abs(end_char - start_char) + 2));
+                    char *group_part = str_malloc(abs(end_char - start_char) + 1);
                     /* Terminate string */
                     group_part[end_char - start_char + 1] = '\0';
                     /* Add characters in ascii table from start_char to end_char */
@@ -185,7 +185,7 @@ int read_config(char *configpath){
                         group_part[i] = start_char;
                     }
                     /* Append group_part into full_group */
-                    char *tmp = malloc_assert(sizeof(char) * (strlen(group_part) + strlen(full_group) + 1));
+                    char *tmp = str_malloc(strlen(group_part) + strlen(full_group));
                     strcpy(tmp, full_group);
                     strcat(tmp, group_part);
                     free(group_part);

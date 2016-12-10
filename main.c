@@ -95,12 +95,12 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
         exit(0);
         break;
     case 'u':
-        arguments->list = malloc_assert(sizeof(char)*(strlen(arg) + 1));
+        arguments->list = str_malloc(strlen(arg));
         strcpy(arguments->list, arg);
         arguments->ext_list = true;
         break;
     case 'U':
-        arguments->cfg = malloc_assert(sizeof(char) * (strlen(arg) + 1));
+        arguments->cfg = str_malloc(strlen(arg));
         strcpy(arguments->cfg, arg);
         arguments->ext_cfg = true;
         break;
@@ -156,7 +156,7 @@ int main(int argc, char **argv){
     if (home == NULL){
         note("DW_HOME is not set, assuming ~/.dw/\n");
         char *usr_home = getenv("HOME");
-        home = malloc_assert(sizeof(char) * ((strlen(usr_home) + strlen(DEF_HOME) + 1)));
+        home = str_malloc((strlen(usr_home) + strlen(DEF_HOME)));
         strcpy(home, usr_home);
         strcat(home, DEF_HOME);
     }
@@ -165,7 +165,7 @@ int main(int argc, char **argv){
     if (input_args.ext_cfg){
         cfg_path = input_args.cfg;
     } else {
-        cfg_path = malloc_assert(sizeof(char) * (strlen(home) + strlen(input_args.cfg) + 1));
+        cfg_path = str_malloc(strlen(home) + strlen(input_args.cfg));
         strcpy(cfg_path, home);
         strcat(cfg_path, input_args.cfg);
     }
@@ -189,7 +189,7 @@ int main(int argc, char **argv){
     if (input_args.list == NULL){
         printf("Using default list...\n");
         if (CONFIG.default_list != NULL){
-            input_args.list = malloc_assert(sizeof(char) * (strlen(CONFIG.default_list) + 1));
+            input_args.list = str_malloc(strlen(CONFIG.default_list));
             strcpy(input_args.list, CONFIG.default_list);
         } else {
             error("default list not set, set default list in configuration or provide list name manually\n");
@@ -203,10 +203,10 @@ int main(int argc, char **argv){
 #endif
     char *listpath;
     if (input_args.ext_list){
-        listpath = malloc_assert(sizeof(char) * (strlen(input_args.list) + 1));
+        listpath = str_malloc(strlen(input_args.list));
         strcpy(listpath, input_args.list);
     } else {
-        listpath = malloc_assert(sizeof(char) * (strlen(home) + strlen(input_args.list) + 1));
+        listpath = str_malloc(strlen(home) + strlen(input_args.list));
         strcpy(listpath, home);
         strcat(listpath, input_args.list);
     }
@@ -365,10 +365,11 @@ void generate(struct dw_hashmap *dw_list, int length){
         strcat(pw_id, " ");
 
         char *found_word = map_lookup(dw_list, id);
-        char *word_copy = malloc_assert(sizeof(char) * (strlen(found_word) + 1));
+        char *word_copy = str_malloc(strlen(found_word));
         strcpy(word_copy, found_word);
-        /* Using sizeof instead of strlen can be used to avoid addition by two, but is not as readable */
-        char *tmp_pw = malloc_assert(sizeof(char) * (strlen(passphrase) + strlen(word_copy) + 2));
+
+        /* Add byte for space character */
+        char *tmp_pw = str_malloc(strlen(passphrase) + strlen(word_copy) + 1);
         strcpy(tmp_pw, passphrase);
         if (tmp_pw[0] != '\0'){
             strcat(tmp_pw, " ");
@@ -438,7 +439,7 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
     int f_size = ftell(list);
     rewind(list);
 
-    char *chunk = malloc_assert(f_size);
+    char *chunk = str_malloc(f_size);
     fread(chunk, f_size, 1, list);
     char *str = strtok(chunk, "\n");
 
@@ -453,7 +454,7 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
         return false;
     }
 
-    char *charset = malloc_assert(sizeof(char) * (charset_size + 1));
+    char *charset = str_malloc(charset_size);
     const int map_size = pow(charset_size, key_size);
 
     str = strtok(NULL, "\n");
@@ -467,7 +468,7 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
     free(CONFIG.char_set);
 
     CONFIG.key_length = key_size;
-    CONFIG.char_set = malloc_assert(sizeof(char) * (strlen(charset) + 1));
+    CONFIG.char_set = str_malloc(strlen(charset));
     strcpy(CONFIG.char_set, charset);
     CONFIG.char_set_size = charset_size;
     CONFIG.map_size = map_size;
@@ -502,7 +503,7 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
          * Since str should be formatted as 'key word', removing the key
          * length from the string should give the length of the word, null terminator included.
          */
-        char *word = malloc_assert(sizeof(char) * (strlen(str) + 1));
+        char *word = str_malloc(strlen(str));
         strcpy(word, str);
 
         size_t p = strcspn(key, CONFIG.char_set);
@@ -512,8 +513,8 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
         }
 
         struct dw_node *new = malloc_assert(sizeof(struct dw_node));
-        new->value.id = malloc_assert(sizeof(char) * (key_size + 1));
-        new->value.value = malloc_assert(sizeof(char) * (strlen(word) + 1));
+        new->value.id = str_malloc(key_size);
+        new->value.value = str_malloc(strlen(word));
         strcpy(new->value.value, word);
         strcpy(new->value.id, key);
         new->key = str_hash(key, map_size);
@@ -531,7 +532,7 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
 bool arguments_insert(struct arguments *arguments, int type, char *arg){
     struct arg_pair *new = malloc_assert(sizeof(struct arg_pair));
     new->type = type;
-    new->value = malloc_assert(sizeof(char) * (strlen(arg) + 1));
+    new->value = str_malloc(strlen(arg));
     strcpy(new->value, arg);
     new->next = NULL;
 
