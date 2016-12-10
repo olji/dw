@@ -351,9 +351,9 @@ void generate(struct dw_hashmap *dw_list, int length){
             scanf("%d", &length);
         } while (length <= 0);
     }
-    char *id = malloc_assert(sizeof(char) * (CONFIG.key_length + 1));
+    char *id = str_malloc(CONFIG.key_length);
     srand(time(NULL));
-    char *passphrase = calloc_assert(1, sizeof(char));
+    char *passphrase = str_malloc(0);
     char *pw_id = calloc_assert((length*CONFIG.key_length) + length + 1, sizeof(char));
 
     for (int i = 0; i < length; ++i){
@@ -475,7 +475,7 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
     printf("Parsing list file...\n");
 #endif
     /* Allocate pointer array now when we know its size */
-    dw_list->map = malloc_assert(sizeof(struct dw_node*) * (CONFIG.map_size));
+    dw_list->map = calloc_assert(CONFIG.map_size, sizeof(struct dw_node*));
     for (int i = 0; i < map_size; ++i){
 #if DEBUG
         if (i%(map_size/10) == 0){
