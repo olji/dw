@@ -183,6 +183,9 @@ int main(int argc, char **argv){
         conf_free();
         args_free(input_args.arguments);
         free(home);
+        if (input_args.ext_list){
+            free(input_args.list);
+        }
         return abs(exit_status);
     }
 
@@ -194,6 +197,11 @@ int main(int argc, char **argv){
         } else {
             error("default list not set, set default list in configuration or provide list name manually\n");
             conf_free();
+            args_free(input_args.arguments);
+            free(home);
+            if (input_args.ext_list){
+                free(input_args.list);
+            }
             return 1;
         }
     }
@@ -242,6 +250,13 @@ int main(int argc, char **argv){
             if (input_args.ext_list){
                 error("File already exists, will not delete files outside %s\n", home);
                 conf_free();
+                args_free(input_args.arguments);
+                free(home);
+                free(listpath);
+                map_free(dw_list);
+                if (input_args.ext_list){
+                    free(input_args.list);
+                }
                 return 1;
             }
             printf("File already exists: %s, delete? [y/n]: ", listpath);
@@ -263,6 +278,13 @@ int main(int argc, char **argv){
                 remove(listpath);
             } else {
                 conf_free();
+                args_free(input_args.arguments);
+                free(home);
+                free(listpath);
+                map_free(dw_list);
+                if (input_args.ext_list){
+                    free(input_args.list);
+                }
                 return 1;
             }
         }
@@ -270,6 +292,13 @@ int main(int argc, char **argv){
         if (input == NULL){
             error("Could not open input file %s\n", input_file);
             conf_free();
+            args_free(input_args.arguments);
+            free(home);
+            free(listpath);
+            map_free(dw_list);
+            if (input_args.ext_list){
+                free(input_args.list);
+            }
             return 1;
         }
         switch (input_args.list_option){
@@ -277,6 +306,13 @@ int main(int argc, char **argv){
             exit_status = list_create(input, dw_list);
             if (exit_status < 1){
                 conf_free();
+                args_free(input_args.arguments);
+                free(home);
+                free(listpath);
+                map_free(dw_list);
+                if (input_args.ext_list){
+                    free(input_args.list);
+                }
                 return abs(exit_status);
             }
             break;
@@ -286,6 +322,13 @@ int main(int argc, char **argv){
         default:
             printf("list_option default case reached, exiting.\n");
             conf_free();
+            args_free(input_args.arguments);
+            free(home);
+            free(listpath);
+            map_free(dw_list);
+            if (input_args.ext_list){
+                free(input_args.list);
+            }
             return 2;
         }
         fclose(input);
@@ -300,6 +343,13 @@ int main(int argc, char **argv){
             if (list == NULL){
                 error("Failed to open list %s for reading.\n", listpath);
                 conf_free();
+                args_free(input_args.arguments);
+                free(home);
+                free(listpath);
+                map_free(dw_list);
+                if (input_args.ext_list){
+                    free(input_args.list);
+                }
                 return 1;
             }
 #if DEBUG
@@ -311,7 +361,14 @@ int main(int argc, char **argv){
             fclose(list);
             if (!ret){
                 printf("Exiting...\n");
+                free(home);
+                free(listpath);
+                map_free(dw_list);
+                args_free(input_args.arguments);
                 conf_free();
+                if (input_args.ext_list){
+                    free(input_args.list);
+                }
                 return 1;
             }
         } else {
@@ -328,11 +385,17 @@ int main(int argc, char **argv){
         default:
             printf("dw_option default case reached, exiting.");
             conf_free();
+            args_free(input_args.arguments);
+            free(home);
+            free(listpath);
+            map_free(dw_list);
+            if (input_args.ext_list){
+                free(input_args.list);
+            }
             return 2;
         }
     }
 
-    /* Cleanup */
     if (input_args.ext_list){
         free(input_args.list);
     }
@@ -451,6 +514,7 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
     sscanf(str, "%zu-%zu", &key_size, &charset_size);
     if (key_size == 0 || charset_size == 0){
         error("Missing information about key size or character set length\n");
+        free(chunk);
         return false;
     }
 
@@ -462,6 +526,8 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
 
     if (strlen(charset) != charset_size){
         error("Given character set does not correspond to given length of character set, list possibly faulty\n");
+        free(chunk);
+        free(charset);
         return false;
     }
 
@@ -487,6 +553,8 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
         str = strtok(NULL, " ");
         if (str == NULL){
             error("Not enough entries present?\nIteration %d of %d\n", i, map_size);
+            free(chunk);
+            free(charset);
             return false;
         }
         if (strlen(str) != key_size){
@@ -509,6 +577,9 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
         size_t p = strcspn(key, CONFIG.char_set);
         if (p != 0){
             error("Key %s is not valid in charset %s\n", key, CONFIG.char_set);
+            free(chunk);
+            free(charset);
+            free(word);
             return false;
         }
 
