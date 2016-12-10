@@ -1,6 +1,6 @@
 CFLAGS=-Wall -pedantic -Werror
 SRC_OBJS=$(wildcard *.c)
-LIBS=-lm -lconfuse
+LIBS=-lm -lconfig
 DEBUG=1
 CVARS= -DDEBUG=$(DEBUG)
 debug: main.c
