@@ -153,24 +153,20 @@ int main(int argc, char **argv){
     };
     argp_parse (&argp, argc, argv, 0, 0, &input_args);
     char *home = getenv("DW_HOME");
-    char *listpath;
     if (home == NULL){
         note("DW_HOME is not set, assuming ~/.dw/\n");
         char *usr_home = getenv("HOME");
-        listpath = malloc_assert(sizeof(char) * ((strlen(usr_home) + strlen(DEF_HOME) + 1)));
-        strcpy(listpath, usr_home);
-        strcat(listpath, DEF_HOME);
-    } else {
-        listpath = malloc_assert(sizeof(char) * (strlen(home) + 1));
-        strcpy(listpath, home);
+        home = malloc_assert(sizeof(char) * ((strlen(usr_home) + strlen(DEF_HOME) + 1)));
+        strcpy(home, usr_home);
+        strcat(home, DEF_HOME);
     }
 
     char *cfg_path;
     if (input_args.ext_cfg){
         cfg_path = input_args.cfg;
     } else {
-        cfg_path = malloc_assert(sizeof(char) * (strlen(listpath) + strlen(input_args.cfg) + 1));
-        strcpy(cfg_path, listpath);
+        cfg_path = malloc_assert(sizeof(char) * (strlen(home) + strlen(input_args.cfg) + 1));
+        strcpy(cfg_path, home);
         strcat(cfg_path, input_args.cfg);
     }
 #if DEBUG
@@ -184,6 +180,9 @@ int main(int argc, char **argv){
      */
     free(cfg_path);
     if (exit_status < 1){
+        conf_free();
+        args_free(input_args.arguments);
+        free(home);
         return abs(exit_status);
     }
 
@@ -194,6 +193,7 @@ int main(int argc, char **argv){
             strcpy(input_args.list, CONFIG.default_list);
         } else {
             error("default list not set, set default list in configuration or provide list name manually\n");
+            conf_free();
             return 1;
         }
     }
@@ -201,16 +201,14 @@ int main(int argc, char **argv){
 #if DEBUG
     printf("List file used: %s\n", input_args.list);
 #endif
+    char *listpath;
     if (input_args.ext_list){
-        free(listpath);
         listpath = malloc_assert(sizeof(char) * (strlen(input_args.list) + 1));
         strcpy(listpath, input_args.list);
     } else {
-        char *tmp = malloc_assert(sizeof(char) * (strlen(listpath) + strlen(input_args.list) + 1));
-        strcpy(tmp, listpath);
-        strcat(tmp, input_args.list);
-        free(listpath);
-        listpath = tmp;
+        listpath = malloc_assert(sizeof(char) * (strlen(home) + strlen(input_args.list) + 1));
+        strcpy(listpath, home);
+        strcat(listpath, input_args.list);
     }
 #if DEBUG
     printf("Listpath: %s\n", listpath);
@@ -242,6 +240,7 @@ int main(int argc, char **argv){
             fclose(list);
             if (input_args.ext_list){
                 error("File already exists, will not delete files outside %s\n", home);
+                conf_free();
                 return 1;
             }
             printf("File already exists: %s, delete? [y/n]: ", listpath);
@@ -262,18 +261,21 @@ int main(int argc, char **argv){
             if (ans == 'y'){
                 remove(listpath);
             } else {
+                conf_free();
                 return 1;
             }
         }
         FILE *input = fopen(input_file, "r");
         if (input == NULL){
             error("Could not open input file %s\n", input_file);
+            conf_free();
             return 1;
         }
         switch (input_args.list_option){
         case CREATE:;
             exit_status = list_create(input, dw_list);
             if (exit_status < 1){
+                conf_free();
                 return abs(exit_status);
             }
             break;
@@ -282,6 +284,7 @@ int main(int argc, char **argv){
             break;
         default:
             printf("list_option default case reached, exiting.\n");
+            conf_free();
             return 2;
         }
         fclose(input);
@@ -295,6 +298,7 @@ int main(int argc, char **argv){
             list = fopen(listpath, "r");
             if (list == NULL){
                 error("Failed to open list %s for reading.\n", listpath);
+                conf_free();
                 return 1;
             }
 #if DEBUG
@@ -306,6 +310,7 @@ int main(int argc, char **argv){
             fclose(list);
             if (!ret){
                 printf("Exiting...\n");
+                conf_free();
                 return 1;
             }
         } else {
@@ -321,6 +326,7 @@ int main(int argc, char **argv){
             break;
         default:
             printf("dw_option default case reached, exiting.");
+            conf_free();
             return 2;
         }
     }
@@ -329,6 +335,7 @@ int main(int argc, char **argv){
     if (input_args.ext_list){
         free(input_args.list);
     }
+    free(home);
     free(listpath);
     map_free(dw_list);
     args_free(input_args.arguments);
@@ -511,6 +518,7 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
         new->key = str_hash(key, map_size);
         new->next = NULL;
         node_insert(&(dw_list->map[new->key]), new);
+        free(word);
     }
 #if DEBUG
     printf("Parsing complete.\n");
