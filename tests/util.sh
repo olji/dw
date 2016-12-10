@@ -45,5 +45,15 @@ assert() {
         echo "#NOK#" >> $LOGFILE 2>&1
         fail $MESSAGE
     fi
+
+    echo "" > $OUTFILE
+    eval "valgrind --log-file=$OUTFILE $RUN_COMMANDS > /dev/null 2>&1"
+    cat $OUTFILE > $LOGFILE.mleak
+    grep "in use at exit: 0 bytes" $OUTFILE >> $LOGFILE.mleak 2>&1
+    if [ $? -eq 0 ] ; then
+        succ "Memory leaks: $MESSAGE"
+    else
+        fail "Memory leaks: $MESSAGE"
+    fi
     rm $OUTFILE
 }

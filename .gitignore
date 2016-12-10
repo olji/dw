@@ -4,3 +4,4 @@ vgcore*
 **/*.log
 **/*.tmp
 **/*.lst
+**/*.mleak
