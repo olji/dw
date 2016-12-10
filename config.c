@@ -158,7 +158,7 @@ int read_config(char *configpath){
                     if (charset_string[i] == ']' &&
                         charset_string[i - 1] != '\\'){
                         /* Append all expanded groups stored in full_group into full_character_set */
-                        char *tmp = malloc_assert(sizeof(char) * (strlen(full_group) + strlen(full_character_set) + 1));
+                        char *tmp = malloc_assert(sizeof(char) * (strlen(full_group) + strlen(full_character_set) + 2));
                         strcpy(tmp, full_character_set);
                         strcat(tmp, full_group);
                         free(full_group);
@@ -177,7 +177,7 @@ int read_config(char *configpath){
                         start_char = end_char;
                         end_char = tmp;
                     }
-                    char *group_part = malloc_assert(sizeof(char) * (abs(end_char - start_char) + 1));
+                    char *group_part = malloc_assert(sizeof(char) * (abs(end_char - start_char) + 2));
                     /* Terminate string */
                     group_part[end_char - start_char + 1] = '\0';
                     /* Add characters in ascii table from start_char to end_char */
@@ -193,7 +193,6 @@ int read_config(char *configpath){
                     full_group = tmp;
             }
         }
-        free(full_group);
         free(CONFIG.char_set);
         CONFIG.char_set = full_character_set;
     }
