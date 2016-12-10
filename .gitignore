@@ -5,3 +5,4 @@ vgcore*
 **/*.tmp
 **/*.lst
 **/*.mleak
+**/*.core.*

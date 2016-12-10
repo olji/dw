@@ -51,9 +51,16 @@ assert() {
     cat $OUTFILE > $LOGFILE.mleak
     grep "in use at exit: 0 bytes" $OUTFILE >> $LOGFILE.mleak 2>&1
     if [ $? -eq 0 ] ; then
-        succ "Memory leaks: $MESSAGE"
+        succ "Memory leaks"
     else
-        fail "Memory leaks: $MESSAGE"
+        fail "Memory leaks"
     fi
+    grep "ERROR SUMMARY: 0" $OUTFILE >> $LOGFILE.mleak 2>&1
+    if [ $? -eq 0 ] ; then
+        succ "Valgrind errors"
+    else
+        fail "Valgrind errors"
+    fi
+    echo
     rm $OUTFILE
 }
