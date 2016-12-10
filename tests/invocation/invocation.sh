@@ -19,20 +19,20 @@ assert '$BIN -g5 --use-list=list.lst' \
     'INVOCATION - Standard generation with --use-list: Passphrase words' \
     'invocation_use-list-word.log'
 # Chaining 1
-assert 'echo "y" | $BIN --create-list=src.tmp --use-list=invocation_new_list.lst -g5' \
-    'ls | grep new_list.lst' \
+assert 'echo "y" | $BIN --create-list=src.tmp --use-list=invocation_new_list1.lst -g5' \
+    'ls | grep invocation_new_list1.lst' \
     0 \
     'INVOCATION - List create and passphrase generate chaining 1' \
     'invocation_chaining-1.log'
 # Chaining 2
-assert 'echo "y" | $BIN --use-list=invocation_new_list.lst -g5 --create-list=src.tmp' \
-    'ls | grep new_list.lst' \
+assert 'echo "y" | $BIN --use-list=invocation_new_list2.lst -g5 --create-list=src.tmp' \
+    'ls | grep invocation_new_list2.lst' \
     0 \
     'INVOCATION - List create and passphrase generate chaining 2' \
     'invocation_chaining-2.log'
 # Chaining 3
-assert 'echo "y" | $BIN -g5 --create-list=src.tmp --use-list=invocation_new_list.lst' \
-    'ls | grep new_list.lst' \
+assert 'echo "y" | $BIN -g5 --create-list=src.tmp --use-list=invocation_new_list3.lst' \
+    'ls | grep invocation_new_list3.lst' \
     0 \
     'INVOCATION - List create and passphrase generate chaining 3' \
     'invocation_chaining-3.log'
