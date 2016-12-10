@@ -26,6 +26,7 @@
 
 #include "map.h"
 #include "config.h"
+#include "output.h"
 #include "mem.h"
 
 #define DEF_HOME "/.dw/"
@@ -70,7 +71,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
         if (arg != NULL){
             for (int i = 0; i < strlen(arg); ++i){
                 if (arg[i] < '0' || arg[i] > '9'){
-                    fprintf(stderr, "ERR: Optional parameter to -g (--generate) should only be integers\n");
+                    error("Optional parameter to -g (--generate) should only be integers\n");
                     exit(1);
                 }
             }
@@ -108,7 +109,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
         if (strstr(arg, "..") == NULL && arg[0] != '/'){
             arguments->list = arg;
         } else {
-            fprintf(stderr, "ERR: List files outside of dw home directory should be supplied with -u\n");
+            error("List files outside of dw home directory should be supplied with -u\n");
             exit(1);
         }
         break;
@@ -154,7 +155,7 @@ int main(int argc, char **argv){
     char *home = getenv("DW_HOME");
     char *listpath;
     if (home == NULL){
-        printf("NOTE: DW_HOME is not set, assuming ~/.dw/\n");
+        note("DW_HOME is not set, assuming ~/.dw/\n");
         char *usr_home = getenv("HOME");
         listpath = malloc_assert(sizeof(char) * ((strlen(usr_home) + strlen(DEF_HOME) + 1)));
         strcpy(listpath, usr_home);
@@ -192,7 +193,7 @@ int main(int argc, char **argv){
             input_args.list = malloc_assert(sizeof(char) * (strlen(CONFIG.default_list) + 1));
             strcpy(input_args.list, CONFIG.default_list);
         } else {
-            fprintf(stderr, "ERROR: default list not set, set default list in configuration or provide list name manually\n");
+            error("default list not set, set default list in configuration or provide list name manually\n");
             return 1;
         }
     }
@@ -240,7 +241,7 @@ int main(int argc, char **argv){
         if (list != NULL){
             fclose(list);
             if (input_args.ext_list){
-                fprintf(stderr, "File already exists\n");
+                error("File already exists, will not delete files outside %s\n", home);
                 return 1;
             }
             printf("File already exists: %s, delete? [y/n]: ", listpath);
@@ -266,7 +267,7 @@ int main(int argc, char **argv){
         }
         FILE *input = fopen(input_file, "r");
         if (input == NULL){
-            fprintf(stderr, "ERROR: Could not open input file %s\n", input_file);
+            error("Could not open input file %s\n", input_file);
             return 1;
         }
         switch (input_args.list_option){
@@ -293,7 +294,7 @@ int main(int argc, char **argv){
         if (input_args.list_option == LIST_NONE){
             list = fopen(listpath, "r");
             if (list == NULL){
-                fprintf(stderr, "ERROR: Failed to open list %s for reading.\n", listpath);
+                error("Failed to open list %s for reading.\n", listpath);
                 return 1;
             }
 #if DEBUG
@@ -416,7 +417,7 @@ int list_create(FILE *input_file, struct dw_hashmap *dw_list){
         str = strtok(NULL, delims);
     }
     if (!map_filled()){
-        fprintf(stderr, "ERR: Could not gather %zu %swords from input file, lower key size, present a file with more %swords or reduce the size of your character set.%s\n", CONFIG.map_size, (CONFIG.unique?"unique ":""), (CONFIG.unique?"unique ":""), (CONFIG.unique?"\nEnabling duplicate words by setting unique_words to false in may result in gathering enough words, but WILL weaken the security of passphrases generated":""));
+        error("Could not gather %zu %swords from input file, lower key size, present a file with more %swords or reduce the size of your character set.%s\n", CONFIG.map_size, (CONFIG.unique?"unique ":""), (CONFIG.unique?"unique ":""), (CONFIG.unique?"\nEnabling duplicate words by setting unique_words to false in may result in gathering enough words, but WILL weaken the security of passphrases generated":""));
         return -1;
     }
     free(chunk);
@@ -440,7 +441,7 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
 
     sscanf(str, "%zu-%zu", &key_size, &charset_size);
     if (key_size == 0 || charset_size == 0){
-        fprintf(stderr, "ERR: Missing information about key size or character set length\n");
+        error("Missing information about key size or character set length\n");
         return false;
     }
 
@@ -451,7 +452,7 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
     sscanf(str, "%s", charset);
 
     if (strlen(charset) != charset_size){
-        fprintf(stderr, "ERR: Given character set does not correspond to given length of character set, list possibly faulty\n");
+        error("Given character set does not correspond to given length of character set, list possibly faulty\n");
         return false;
     }
 
@@ -476,17 +477,17 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
 #endif
         str = strtok(NULL, " ");
         if (str == NULL){
-            fprintf(stderr, "ERR: Not enough entries present?\nIteration %d of %d\n", i, map_size);
+            error("Not enough entries present?\nIteration %d of %d\n", i, map_size);
             return false;
         }
         if (strlen(str) != key_size){
-            fprintf(stderr, "ERR: Length of key %s not consistent with given length of file", str);
+            error("Length of key %s not consistent with given length of file", str);
         }
         char key[key_size];
         strcpy(key, str);
         str = strtok(NULL, "\n");
         if (str == NULL){
-            fprintf(stderr, "ERR: Word missing from entry.\nIteration %d of %d\n", i, map_size);
+            error("Word missing from entry.\nIteration %d of %d\n", i, map_size);
             return false;
         }
         /*
@@ -498,7 +499,7 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
 
         size_t p = strcspn(key, CONFIG.char_set);
         if (p != 0){
-            fprintf(stderr, "ERR: Key %s is not valid in charset %s\n", key, CONFIG.char_set);
+            error("Key %s is not valid in charset %s\n", key, CONFIG.char_set);
             return false;
         }
 
