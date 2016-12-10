@@ -33,7 +33,7 @@
 
 extern struct dw_config CONFIG;
 
-const char *argp_program_version = "dw 0.4.3";
+const char *argp_program_version = "dw 0.5";
 const char *argp_program_bug_address = "<N/A>";
 
 static char doc[] = "dw - Diceware manager";
