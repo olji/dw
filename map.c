@@ -131,18 +131,21 @@ char *map_lookup(struct dw_hashmap *map, char *id){
     return ret;
 }
 void node_free(struct dw_node* node){
-    if (node->next != NULL){
-        node_free(node->next);
+    if (node == NULL){
+        return;
     }
+    node_free(node->next);
     free(node->value.id);
     free(node->value.value);
     free(node->next);
 }
 void map_free(struct dw_hashmap* map){
-    for (int i = 0; i < CONFIG.map_size; ++i){
-        if (map->map[i] != NULL){
-            node_free(map->map[i]);
-            free(map->map[i]);
+    if (map->map != NULL){
+        for (int i = 0; i < CONFIG.map_size; ++i){
+            if (map->map[i] != NULL){
+                node_free(map->map[i]);
+                free(map->map[i]);
+            }
         }
     }
     free(map->map);
