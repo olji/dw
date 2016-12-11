@@ -32,6 +32,9 @@
 
 extern struct dw_config CONFIG;
 
+void sort(char *);
+char *unique(char *);
+void rightshift_to(char*, int, int);
 int read_config(char *configpath){
     /* Set default values */
     CONFIG.default_list = str_malloc(strlen(DEF_LIST));
@@ -193,8 +196,13 @@ int read_config(char *configpath){
                     full_group = tmp;
             }
         }
+        /* Sort string and remove duplicates */
+        sort(full_character_set);
+        full_character_set = unique(full_character_set);
+
         free(CONFIG.char_set);
         CONFIG.char_set = full_character_set;
+        debug("Charset: %s\n", CONFIG.char_set);
     }
     config_lookup_int(&cfg, "key-length", &CONFIG.key_length);
     config_lookup_int(&cfg, "word-min-length", &CONFIG.word_min_len);
@@ -205,6 +213,39 @@ int read_config(char *configpath){
 
     config_destroy(&cfg);
     return true;
+}
+
+/* Simple insertion sort */
+void sort(char *str){
+    for (int i = 0, j = i; i < strlen(str); ++i, j = i){
+        while (j > 0 && str[j-1] > str[j]){
+            char t = str[j-1];
+            str[j-1] = str[j];
+            str[j] = t;
+            --j;
+        }
+    }
+}
+char *unique(char *str){
+    /* Shift non-duplicates forward, leaving trash at the beginning of the string */
+    int duplicates = 0;
+    for (int i = 0; i < strlen(str); ++i){
+        if (str[i] == str[i + 1]){
+            rightshift_to(str, duplicates++, i);
+        }
+    }
+    char *new = str_malloc(strlen(str) - duplicates);
+    strcpy(new, &str[duplicates]);
+    free(str);
+    note("%d duplicate characters removed from expanded character set string\n", duplicates);
+    return new;
+}
+void rightshift_to(char *str, int start, int end){
+    if (end <= start){
+        return;
+    }
+    str[end] = str[end-1];
+    rightshift_to(str, start, end-1);
 }
 void conf_free(){
     free(CONFIG.default_list);
