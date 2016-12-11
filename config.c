@@ -53,15 +53,8 @@ int read_config(char *configpath){
         bool exit = false;
         FILE *fp = fopen(configpath, "r");
         if (fp == NULL){
-            note("Failed to open file '%s' for reading. Create default config at '%s'? [y/n]", configpath, configpath);
-            char ans = 0;
-            do{
-                if (ans != 0){
-                    printf("Please answer y or n\n");
-                }
-                scanf("%s", &ans);
-                ans = tolower(ans);
-            } while (ans != 'y' && ans != 'n');
+            note("Failed to open file '%s' for reading. ", configpath);
+            char ans = ask("yn", "Create default config at '%s'?", configpath);
             if (ans == 'y'){
                 /* Setup default configuration for libconfig */
                 config_setting_t *root, *setting;
@@ -87,15 +80,7 @@ int read_config(char *configpath){
                     return -1;
                 }
             }
-            printf("Continue?[y/n]");
-            ans = 0;
-            do{
-                if (ans != 0){
-                    printf("Please answer y or n\n");
-                }
-                scanf("%s", &ans);
-                ans = tolower(ans);
-            } while (ans != 'y' && ans != 'n');
+            ans = ask("yn", "Continue?");
             if (ans == 'n'){
                 exit = true;
             }

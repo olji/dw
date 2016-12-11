@@ -251,21 +251,7 @@ int main(int argc, char **argv){
                 }
                 return 1;
             }
-            printf("File already exists: %s, delete? [y/n]: ", listpath);
-            char ans = 0;
-            do{
-                if (ans != 0){
-                    printf("Please answer y or n\n");
-                }
-                /*
-                 * Scanf sets the value of input_args.list_option to zero for some reason here,
-                 * workaround until actual issue found and corrected
-                 */
-                int tmp = input_args.list_option;
-                scanf("%s", &ans);
-                input_args.list_option = tmp;
-                ans = tolower(ans);
-            } while (ans != 'y' && ans != 'n');
+            char ans = ask("yn", "File already exists: %s, delete?", listpath);
             if (ans == 'y'){
                 remove(listpath);
             } else {
@@ -445,15 +431,8 @@ void lookup(struct dw_hashmap *dw_list){
 }
 int list_create(FILE *input_file, struct dw_hashmap *dw_list){
     if (!CONFIG.unique){
-        printf("NOTE: dw is currently set to NOT enforce unique words in the diceware list, which may result in duplicate entries, really continue? [y/n]: ");
-        char ans = 0;
-        do{
-            if (ans != 0){
-                printf("Please answer y or n\n");
-            }
-            scanf("%s", &ans);
-            ans = tolower(ans);
-        } while (ans != 'y' && ans != 'n');
+        note("dw is currently set to NOT enforce unique words in the diceware list, which may result in duplicate entries, ");
+        char ans = ask("yn", "really continue?");
         if (ans == 'n'){
             return 0;
         }
