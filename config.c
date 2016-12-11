@@ -35,6 +35,8 @@ extern struct dw_config CONFIG;
 void sort(char *);
 char *unique(char *);
 void rightshift_to(char*, int, int);
+char *expand_string(const char*);
+int write_config();
 int read_config(char *configpath){
     /* Set default values */
     CONFIG.default_list = str_malloc(strlen(DEF_LIST));
@@ -56,27 +58,7 @@ int read_config(char *configpath){
             note("Failed to open file '%s' for reading. ", configpath);
             char ans = ask("yn", "Create default config at '%s'?", configpath);
             if (ans == 'y'){
-                /* Setup default configuration for libconfig */
-                config_setting_t *root, *setting;
-                root = config_root_setting(&cfg);
-                /* Set default-list */
-                setting = config_setting_add(root, "default-list", CONFIG_TYPE_STRING);
-                config_setting_set_string(setting, CONFIG.default_list);
-                /* Set key-length */
-                setting = config_setting_add(root, "key-length", CONFIG_TYPE_INT);
-                config_setting_set_int(setting, CONFIG.key_length);
-                /* Set character-set */
-                setting = config_setting_add(root, "character-set", CONFIG_TYPE_STRING);
-                config_setting_set_string(setting, CONFIG.char_set);
-                /* Set unique */
-                setting = config_setting_add(root, "unique", CONFIG_TYPE_BOOL);
-                config_setting_set_bool(setting, CONFIG.unique);
-                /* Set word-min-length */
-                setting = config_setting_add(root, "word-min-length", CONFIG_TYPE_INT);
-                config_setting_set_int(setting, CONFIG.word_min_len);
-                if (!config_write_file(&cfg, configpath)){
-                    error("Could not write default configuration to file '%s'", configpath);
-                    config_destroy(&cfg);
+                if (write_config(&cfg, configpath) < 0){
                     return -1;
                 }
             }
@@ -102,86 +84,8 @@ int read_config(char *configpath){
         strcpy(CONFIG.default_list, def_list_string);
     }
     if (config_lookup_string(&cfg, "character-set", &charset_string)){
-        /* put in separate function */
-        char start_char;
-        char end_char;
-        /* full_group will be the character set with all eventual groups expanded */
-        char *full_character_set = calloc_assert(1, sizeof(char));
-        /* group_part is the fully expanded string from e.g. [az09] */
-        char *full_group = calloc_assert(1, sizeof(char));
-        int str_part_start = 0;
-        enum parse_mode {NORMAL = 0, CHAR_GROUP} p_mode = NORMAL;
-        for (int i = 0; i <= strlen(charset_string); ++i){
-            /* If end of string reached, copy uncollected characters */
-            if (charset_string[i] == '\0' && str_part_start < i){
-                char *tmp = str_malloc(strlen(full_character_set) + (i - str_part_start));
-                strcpy(tmp, full_character_set);
-                strcat(tmp, &charset_string[str_part_start]);
-                free(full_character_set);
-                full_character_set = tmp;
-            }
+        char *full_character_set = expand_string(charset_string);
 
-            switch (p_mode){
-                case NORMAL:
-                    /* If unescaped opening square bracket... */
-                    if (charset_string[i] == '['){
-                        if (i == 0 || (charset_string[i-1] != '\\' &&
-                                    strstr(charset_string, "]"))){
-                            /* Copy the string before the character '[' into full group */
-                            if (i != str_part_start){
-                                char *tmp;
-                                tmp = str_malloc(strlen(full_character_set) + (i - str_part_start) - 1);
-                                strcpy(tmp, full_character_set);
-                                strncat(tmp, charset_string, i - (str_part_start));
-                                free(full_character_set);
-                                full_character_set = tmp;
-                            }
-                            p_mode = CHAR_GROUP;
-                            break;
-                        }
-                    }
-                    break;
-                /* Inside a square bracket statement */
-                case CHAR_GROUP:
-                    if (charset_string[i] == ']' &&
-                        charset_string[i - 1] != '\\'){
-                        /* Append all expanded groups stored in full_group into full_character_set */
-                        char *tmp = str_malloc(strlen(full_group) + strlen(full_character_set) + 1);
-                        strcpy(tmp, full_character_set);
-                        strcat(tmp, full_group);
-                        free(full_group);
-                        free(full_character_set);
-                        full_character_set = tmp;
-                        /* Set str_part_start to after closing square bracket */
-                        str_part_start = i+1;
-                        p_mode = NORMAL;
-                        break;
-                    }
-                    start_char = charset_string[i++];
-                    end_char = charset_string[i];
-                    /* Swap if start_char appears after end_char in ascii table */
-                    if (start_char > end_char){
-                        char tmp = start_char;
-                        start_char = end_char;
-                        end_char = tmp;
-                    }
-                    char *group_part = str_malloc(abs(end_char - start_char) + 1);
-                    /* Terminate string */
-                    group_part[end_char - start_char + 1] = '\0';
-                    /* Add characters in ascii table from start_char to end_char */
-                    for (int i = 0; start_char <= end_char; ++i, ++start_char){
-                        group_part[i] = start_char;
-                    }
-                    /* Append group_part into full_group */
-                    char *tmp = str_malloc(strlen(group_part) + strlen(full_group));
-                    strcpy(tmp, full_group);
-                    strcat(tmp, group_part);
-                    free(group_part);
-                    free(full_group);
-                    full_group = tmp;
-            }
-        }
-        /* Sort string and remove duplicates */
         sort(full_character_set);
         full_character_set = unique(full_character_set);
 
@@ -200,6 +104,87 @@ int read_config(char *configpath){
     return true;
 }
 
+char *expand_string(const char* charset_string){
+    char start_char;
+    char end_char;
+    /* full_group will be the character set with all eventual groups expanded */
+    char *full_character_set = calloc_assert(1, sizeof(char));
+    /* group_part is the fully expanded string from e.g. [az09] */
+    char *full_group = calloc_assert(1, sizeof(char));
+    int str_part_start = 0;
+    enum parse_mode {NORMAL = 0, CHAR_GROUP} p_mode = NORMAL;
+    for (int i = 0; i <= strlen(charset_string); ++i){
+        /* If end of string reached, copy uncollected characters */
+        if (charset_string[i] == '\0' && str_part_start < i){
+            char *tmp = str_malloc(strlen(full_character_set) + (i - str_part_start));
+            strcpy(tmp, full_character_set);
+            strcat(tmp, &charset_string[str_part_start]);
+            free(full_character_set);
+            full_character_set = tmp;
+        }
+
+        switch (p_mode){
+            case NORMAL:
+                /* If unescaped opening square bracket... */
+                if (charset_string[i] == '['){
+                    if (i == 0 || (charset_string[i-1] != '\\' &&
+                                strstr(charset_string, "]"))){
+                        /* Copy the string before the character '[' into full group */
+                        if (i != str_part_start){
+                            char *tmp;
+                            tmp = str_malloc(strlen(full_character_set) + (i - str_part_start) - 1);
+                            strcpy(tmp, full_character_set);
+                            strncat(tmp, charset_string, i - (str_part_start));
+                            free(full_character_set);
+                            full_character_set = tmp;
+                        }
+                        p_mode = CHAR_GROUP;
+                        break;
+                    }
+                }
+                break;
+                /* Inside a square bracket statement */
+            case CHAR_GROUP:
+                if (charset_string[i] == ']' &&
+                        charset_string[i - 1] != '\\'){
+                    /* Append all expanded groups stored in full_group into full_character_set */
+                    char *tmp = str_malloc(strlen(full_group) + strlen(full_character_set) + 1);
+                    strcpy(tmp, full_character_set);
+                    strcat(tmp, full_group);
+                    free(full_group);
+                    free(full_character_set);
+                    full_character_set = tmp;
+                    /* Set str_part_start to after closing square bracket */
+                    str_part_start = i+1;
+                    p_mode = NORMAL;
+                    break;
+                }
+                start_char = charset_string[i++];
+                end_char = charset_string[i];
+                /* Swap if start_char appears after end_char in ascii table */
+                if (start_char > end_char){
+                    char tmp = start_char;
+                    start_char = end_char;
+                    end_char = tmp;
+                }
+                char *group_part = str_malloc(abs(end_char - start_char) + 1);
+                /* Terminate string */
+                group_part[end_char - start_char + 1] = '\0';
+                /* Add characters in ascii table from start_char to end_char */
+                for (int i = 0; start_char <= end_char; ++i, ++start_char){
+                    group_part[i] = start_char;
+                }
+                /* Append group_part into full_group */
+                char *tmp = str_malloc(strlen(group_part) + strlen(full_group));
+                strcpy(tmp, full_group);
+                strcat(tmp, group_part);
+                free(group_part);
+                free(full_group);
+                full_group = tmp;
+        }
+    }
+    return full_character_set;
+}
 /* Simple insertion sort */
 void sort(char *str){
     for (int i = 0, j = i; i < strlen(str); ++i, j = i){
@@ -233,6 +218,32 @@ void rightshift_to(char *str, int start, int end){
     }
     str[end] = str[end-1];
     rightshift_to(str, start, end-1);
+}
+int write_config(config_t *cfg, char *configpath){
+    /* Setup default configuration for libconfig */
+    config_setting_t *root, *setting;
+    root = config_root_setting(cfg);
+    /* Set default-list */
+    setting = config_setting_add(root, "default-list", CONFIG_TYPE_STRING);
+    config_setting_set_string(setting, CONFIG.default_list);
+    /* Set key-length */
+    setting = config_setting_add(root, "key-length", CONFIG_TYPE_INT);
+    config_setting_set_int(setting, CONFIG.key_length);
+    /* Set character-set */
+    setting = config_setting_add(root, "character-set", CONFIG_TYPE_STRING);
+    config_setting_set_string(setting, CONFIG.char_set);
+    /* Set unique */
+    setting = config_setting_add(root, "unique", CONFIG_TYPE_BOOL);
+    config_setting_set_bool(setting, CONFIG.unique);
+    /* Set word-min-length */
+    setting = config_setting_add(root, "word-min-length", CONFIG_TYPE_INT);
+    config_setting_set_int(setting, CONFIG.word_min_len);
+    if (!config_write_file(cfg, configpath)){
+        error("Could not write default configuration to file '%s'", configpath);
+        config_destroy(cfg);
+        return -1;
+    }
+    return 0;
 }
 void conf_free(){
     free(CONFIG.default_list);
