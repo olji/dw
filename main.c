@@ -26,7 +26,7 @@
 
 #include "map.h"
 #include "config.h"
-#include "output.h"
+#include "ioput.h"
 #include "mem.h"
 
 #define DEF_HOME "/.dw/"

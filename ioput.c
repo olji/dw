@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdarg.h>
-#include "output.h"
+#include <string.h>
+#include <ctype.h>
+#include "ioput.h"
 
 void error(char *format, ...){
     va_list args;
@@ -30,4 +32,28 @@ void debug(char *format, ...){
     vprintf(format, args);
     va_end(args);
 #endif
+}
+
+char ask(char *answers, char *format, ...){
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+    printf(" [");
+    for (int i = 0; i < strlen(answers); ++i){
+        if (i > 0){
+            printf("/");
+        }
+        printf("%c", answers[i]);
+    }
+    printf("] ");
+    char ans = 0;
+    do{
+        if (ans != 0){
+            printf("Invalid answer\n");
+        }
+        scanf("%s", &ans);
+        ans = tolower(ans);
+    } while (strchr(answers, ans) == NULL);
+    return ans;
 }

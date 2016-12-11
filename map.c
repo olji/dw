@@ -24,7 +24,7 @@
 
 #include "map.h"
 #include "config.h"
-#include "output.h"
+#include "ioput.h"
 
 extern struct dw_config CONFIG;
 

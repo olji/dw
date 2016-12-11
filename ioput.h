@@ -9,4 +9,6 @@
 void error(char *format, ...);
 void note(char *format, ...);
 void debug(char *format, ...);
+
+char ask(char *answers, char *format, ...);
 #endif

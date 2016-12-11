@@ -25,7 +25,7 @@
 
 #include "config.h"
 #include "mem.h"
-#include "output.h"
+#include "ioput.h"
 
 #define DEF_LIST "default"
 #define DEF_CHARSET "0123456789"
