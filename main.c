@@ -84,9 +84,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
         break;
     case 'c':
         arguments->list_option = CREATE;
-#if DEBUG
-        printf("Input file: %s\n", arg);
-#endif
+        debug("Input file: %s\n", arg);
         arguments_insert(arguments, INPUT_FILE, arg);
         break;
     case 'i':
@@ -169,9 +167,7 @@ int main(int argc, char **argv){
         strcpy(cfg_path, home);
         strcat(cfg_path, input_args.cfg);
     }
-#if DEBUG
-    printf("cfg_path: %s\n", cfg_path);
-#endif
+    debug("cfg_path: %s\n", cfg_path);
 
     int exit_status = read_config(cfg_path);
     /*
@@ -206,9 +202,7 @@ int main(int argc, char **argv){
         }
     }
 
-#if DEBUG
-    printf("List file used: %s\n", input_args.list);
-#endif
+    debug("List file used: %s\n", input_args.list);
     char *listpath;
     if (input_args.ext_list){
         listpath = str_malloc(strlen(input_args.list));
@@ -218,9 +212,7 @@ int main(int argc, char **argv){
         strcpy(listpath, home);
         strcat(listpath, input_args.list);
     }
-#if DEBUG
-    printf("Listpath: %s\n", listpath);
-#endif
+    debug("Listpath: %s\n", listpath);
 
     char *input_file;
     int g_length = 0;
@@ -352,11 +344,7 @@ int main(int argc, char **argv){
                 }
                 return 1;
             }
-#if DEBUG
-            else {
-                printf("Opened: %s\n", listpath);
-            }
-#endif
+            debug("Opened: %s\n", listpath);
             bool ret = list_parse(list, dw_list);
             fclose(list);
             if (!ret){
@@ -507,9 +495,7 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
     char *str = strtok(chunk, "\n");
 
     size_t key_size = 0, charset_size = 0;
-#if DEBUG
-    printf("chunk: %s, f_size: %d, chunk_part: %s\n", chunk, f_size, str);
-#endif
+    debug("chunk: %s, f_size: %d, chunk_part: %s\n", chunk, f_size, str);
 
     sscanf(str, "%zu-%zu", &key_size, &charset_size);
     if (key_size == 0 || charset_size == 0){
@@ -539,15 +525,13 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
     CONFIG.char_set_size = charset_size;
     CONFIG.map_size = map_size;
 
-#if DEBUG
-    printf("Parsing list file...\n");
-#endif
+    debug("Parsing list file...\n");
     /* Allocate pointer array now when we know its size */
     dw_list->map = calloc_assert(CONFIG.map_size, sizeof(struct dw_node*));
     for (int i = 0; i < map_size; ++i){
 #if DEBUG
         if (i%(map_size/10) == 0){
-            printf("Progress: %d%%\n",i/(map_size/100));
+            debug("Progress: %d%%\n",i/(map_size/100));
         }
 #endif
         str = strtok(NULL, " ");
@@ -593,9 +577,7 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
         node_insert(&(dw_list->map[new->key]), new);
         free(word);
     }
-#if DEBUG
-    printf("Parsing complete.\n");
-#endif
+    debug("Parsing complete.\n");
     free(charset);
     free(chunk);
     return true;
