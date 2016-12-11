@@ -237,7 +237,9 @@ char *unique(char *str){
     char *new = str_malloc(strlen(str) - duplicates);
     strcpy(new, &str[duplicates]);
     free(str);
-    note("%d duplicate characters removed from expanded character set string\n", duplicates);
+    if (duplicates > 0){
+        note("%d duplicate characters removed from expanded character set string\n", duplicates);
+    }
     return new;
 }
 void rightshift_to(char *str, int start, int end){
