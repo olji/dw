@@ -20,3 +20,14 @@ void note(char *format, ...){
     vprintf(format, args);
     va_end(args);
 }
+void debug(char *format, ...){
+#if DEBUG
+    va_list args;
+    printf(DEBUG_OUT);
+    printf("DEBUG: ");
+    printf(NORMAL_OUT);
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+#endif
+}
