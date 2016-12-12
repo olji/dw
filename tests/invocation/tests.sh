@@ -44,7 +44,7 @@ assert 'echo "42342 12345 83723" | $BIN --use-list=list.lst --lookup' \
     'invocation_lookup.log'
 # Character set usage
 assert 'echo "y" | $BIN --create-list=src.tmp --use-list=invocation_c_set.lst --use-config=c_set.conf' \
-    'grep "ajibe" config_c_set.lst' \
+    'grep "ajibe" invocation_c_set.lst' \
     0 \
     'INVOCATION - Character set used properly' \
     'invocation_cset.log'
