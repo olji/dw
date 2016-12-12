@@ -31,5 +31,6 @@ struct dw_config{
 
 int read_config(char*);
 void conf_free();
+void sort(char *);
 
 #endif

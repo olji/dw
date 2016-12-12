@@ -32,7 +32,6 @@
 
 extern struct dw_config CONFIG;
 
-void sort(char *);
 char *unique(char *);
 void rightshift_to(char*, int, int);
 char *expand_string(const char*);
