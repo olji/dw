@@ -41,12 +41,12 @@ assert 'echo "42342 12345 83723" | $BIN --use-list=list.lst --lookup' \
     'grep "word24324" output' 0 \
     'INVOCATION - Passphrase lookup' \
     'invocation_lookup.log'
-# Character groups
-assert 'echo "y" | $BIN --create-list=src.tmp --use-list=invocation_c_groups.lst --use-config=c_groups.conf' \
-    'grep "ajibe" invocation_c_groups.lst' \
+# Character set usage
+assert 'echo "y" | $BIN --create-list=src.tmp --use-list=invocation_c_set.lst --use-config=c_set.conf' \
+    'grep "ajibe" config_c_set.lst' \
     0 \
-    'INVOCATION - Character set groups' \
-    'invocation_cgroup.log'
+    'INVOCATION - Character set used properly' \
+    'invocation_cset.log'
 # Allocation error
 assert 'echo "y" | $BIN --create-list=src.tmp --use-list=invocation_alloc_err.lst --use-config=alloc_error.conf' \
     'grep "Allocation error" $OUTFILE' \
