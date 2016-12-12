@@ -53,6 +53,8 @@ char ask(char *answers, char *format, ...){
             printf("Invalid answer\n");
         }
         scanf("%s", &ans);
+        /* Get rid of newline */
+        fgetc(stdin);
         ans = tolower(ans);
     } while (strchr(answers, ans) == NULL);
     return ans;
