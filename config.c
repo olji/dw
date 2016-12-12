@@ -110,7 +110,7 @@ char *expand_string(const char* charset_string){
     /* full_group will be the character set with all eventual groups expanded */
     char *full_character_set = calloc_assert(1, sizeof(char));
     /* group_part is the fully expanded string from e.g. [az09] */
-    char *full_group = calloc_assert(1, sizeof(char));
+    char *full_group;
     int str_part_start = 0;
     enum parse_mode {NORMAL = 0, CHAR_GROUP} p_mode = NORMAL;
     for (int i = 0; i <= strlen(charset_string); ++i){
@@ -138,6 +138,7 @@ char *expand_string(const char* charset_string){
                             free(full_character_set);
                             full_character_set = tmp;
                         }
+                        full_group = calloc_assert(1, sizeof(char));
                         p_mode = CHAR_GROUP;
                         break;
                     }
