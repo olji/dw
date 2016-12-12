@@ -27,13 +27,13 @@ assert() {
     touch $LOGFILE
     RUN_COMMANDS=$1
     CHECK_COMMANDS=$2
-    eval "$RUN_COMMANDS > $OUTFILE 2>&1"
+    eval "($RUN_COMMANDS) > $OUTFILE 2>&1"
     cat $OUTFILE > $LOGFILE
     if [[ ! -z "${CHECK_COMMANDS}" ]]; then
         echo >> $LOGFILE
         echo >> $LOGFILE
         echo "#CHECKING#" >> $LOGFILE
-        eval "$CHECK_COMMANDS >> $LOGFILE 2>&1"
+        eval "($CHECK_COMMANDS) >> $LOGFILE 2>&1"
     fi
     STATUSC=$?
 
