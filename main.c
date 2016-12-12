@@ -59,8 +59,9 @@ void generate(struct dw_hashmap*, int);
 void lookup(struct dw_hashmap*);
 bool arguments_insert(struct arguments*, int, char*);
 int list_create(FILE*, struct dw_hashmap*);
-void list_import(FILE*, struct dw_hashmap*);
+bool list_import(FILE*, struct dw_hashmap*);
 bool list_parse(FILE*, struct dw_hashmap*);
+char **parse_key_word(char*, char*);
 void args_free(struct arg_pair*);
 
 static error_t parse_opt (int key, char *arg, struct argp_state *state){
@@ -89,8 +90,8 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
         break;
     case 'i':
         arguments->list_option = IMPORT;
-        printf("Import is not implemented yet, exiting...\n");
-        exit(0);
+        debug("Input file: %s\n", arg);
+        arguments_insert(arguments, INPUT_FILE, arg);
         break;
     case 'u':
         arguments->list = str_malloc(strlen(arg));
@@ -295,7 +296,17 @@ int main(int argc, char **argv){
             }
             break;
         case IMPORT:
-            list_import(input, dw_list);
+            if (!list_import(input, dw_list)){
+                conf_free();
+                args_free(input_args.arguments);
+                free(home);
+                free(listpath);
+                map_free(dw_list);
+                if (input_args.ext_list){
+                    free(input_args.list);
+                }
+                return 1;
+            }
             break;
         default:
             printf("list_option default case reached, exiting.\n");
@@ -462,7 +473,84 @@ int list_create(FILE *input_file, struct dw_hashmap *dw_list){
     free(chunk);
     return 1;
 }
-void list_import(FILE *input_file, struct dw_hashmap *dw_list){
+bool list_import(FILE *input_file, struct dw_hashmap *dw_list){
+    printf("Enter format of key-word pairs (E.g. k:w for key followed by word, separated by colon): ");
+    char c = 0;
+    char *format = str_malloc(0);
+    while (c != '\n' && c != EOF){
+        c = fgetc(stdin);
+        char *tmp = str_malloc(strlen(format) + 1);
+        strcpy(tmp, format);
+        tmp[strlen(format)] = c;
+        free(format);
+        format = tmp;
+    }
+    debug("format: %s\n", format);
+    fseek(input_file, 0, SEEK_END);
+    int f_size = ftell(input_file);
+    rewind(input_file);
+
+    char *chunk = str_malloc(f_size);
+    fread(chunk, f_size, 1, input_file);
+    char *string = NULL;
+    char *char_set = str_malloc(0);
+    size_t key_size = 0, map_size = 0, result_amount = 0;
+    /* First pass, needed to ensure full character set */
+    char ***all_results = NULL;
+    string = strtok(chunk, "\n");
+    do{
+        char **result = parse_key_word(format, string);
+        if (key_size == 0){
+            key_size = strlen(result[0]);
+        } else if (key_size != strlen(result[0])){
+            error("Key length not consistent!\n");
+            return false;
+        }
+
+
+        ++result_amount;
+        char ***tmp = realloc(all_results, sizeof(char**) * result_amount);
+        if (tmp == NULL){
+            error("Error on reallocation!\n");
+            return false;
+        }
+        all_results = tmp;
+        all_results[result_amount-1] = result;
+        for(int i = 0; i < strlen(result[0]); ++i){
+            if (strchr(char_set, result[0][i]) == NULL){
+                char *tmp = str_malloc(strlen(char_set) + 1);
+                strcpy(tmp, char_set);
+                tmp[strlen(char_set)] = result[0][i];
+                free(char_set);
+                char_set = tmp;
+            }
+        }
+    } while ((string = strtok(NULL, "\n")) != NULL);
+    sort(char_set);
+    map_size = pow(strlen(char_set), key_size);
+    free(CONFIG.char_set);
+    CONFIG.char_set = char_set;
+    CONFIG.map_size = map_size;
+    CONFIG.key_length = key_size;
+    CONFIG.char_set_size = strlen(char_set);
+    dw_list->map = calloc_assert(map_size, sizeof(struct dw_node*));
+    for (int i = 0; i < result_amount; ++i){
+        struct dw_node *new = malloc_assert(sizeof(struct dw_node));
+        new->value.id = str_malloc(key_size);
+        new->value.value = str_malloc(strlen(all_results[i][1]));
+        strcpy(new->value.value, all_results[i][1]);
+        strcpy(new->value.id, all_results[i][0]);
+        new->key = str_hash(all_results[i][0], map_size);
+        new->next = NULL;
+        node_insert(&(dw_list->map[new->key]), new);
+        free(all_results[i][0]);
+        free(all_results[i][1]);
+        free(all_results[i]);
+    }
+    free(format);
+    free(all_results);
+    free(chunk);
+    return true;
 }
 bool list_parse(FILE *list, struct dw_hashmap *dw_list){
     fseek(list, 0, SEEK_END);
@@ -585,4 +673,40 @@ void args_free(struct arg_pair *node){
         free(node->value);
         free(node);
     }
+}
+char **parse_key_word(char *format, char *string){
+    enum kwmode{NONE = 0, KEY, WORD} mode = NONE;
+    char **key_word = malloc(sizeof(char*) * 2);
+    int mode_start = 0;
+
+    for (int i = 0, j = 0; i < strlen(format); ++i){
+        if (format[i] == 'k'){
+            mode = KEY;
+        } else if (format[i] == 'w'){
+            mode = WORD;
+        } else {
+            mode_start = ++j;
+            mode = NONE;
+        }
+        switch (mode){
+        case KEY:
+            /* format[i] should contain the delimiter at this point if not passed already */
+            for (; (string[j] != format[i+1] && j <= strlen(string)); ++j);
+            key_word[0] = malloc(sizeof(char) * (j - mode_start + 1));
+            strncpy(key_word[0], &string[mode_start], j - mode_start);
+            key_word[0][j - mode_start] = '\0';
+            break;
+        case WORD:
+            /* format[i] should contain the delimiter at this point if not passed already */
+            for (; (string[j] != format[i+1] && j <= strlen(string)); ++j);
+            key_word[1] = malloc(sizeof(char) * (j - mode_start + 1));
+            strncpy(key_word[1], &string[mode_start], j - mode_start);
+            key_word[1][j - mode_start] = '\0';
+            break;
+        case NONE:
+        default:
+            break;
+        }
+    }
+    return key_word;
 }
