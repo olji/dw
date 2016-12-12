@@ -47,7 +47,7 @@ assert() {
     fi
 
     echo "" > $OUTFILE
-    eval "valgrind --log-file=$OUTFILE $RUN_COMMANDS > /dev/null 2>&1"
+    eval "valgrind --leak-check=full --show-leak-kinds=all --log-file=$OUTFILE $RUN_COMMANDS > /dev/null 2>&1"
     cat $OUTFILE > $LOGFILE.mleak
     grep "in use at exit: 0 bytes" $OUTFILE >> $LOGFILE.mleak 2>&1
     if [ $? -eq 0 ] ; then
