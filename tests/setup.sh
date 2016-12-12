@@ -58,11 +58,12 @@ fi
 assert '$BIN --create-list=${SRC_FILE} --use-list=$LST_FILE' '' 0 'LIST GENERATION - Complete file' 'gen.log'
 
 echo "Creating list files for testing purposes..."
-head -n25 $LST_FILE > list_formatting/incomplete.lst
-tail -n +3 $LST_FILE > list_formatting/missing_info.lst
+head -n25 $LST_FILE > formatting/incomplete.lst
+tail -n +3 $LST_FILE > formatting/missing_info.lst
 cp $LST_FILE invocation/list.lst
 cp $SRC_FILE invocation/src.tmp
-sed '1s/10/15/' list.lst > list_formatting/charset-len-wrong.lst
-sed 's/word53432//' list.lst > list_formatting/missing-line-entry.lst
+cp $SRC_FILE config/src.tmp
+sed '1s/10/15/' list.lst > formatting/charset-len-wrong.lst
+sed 's/word53432//' list.lst > formatting/missing-line-entry.lst
 
 cd $CWD
