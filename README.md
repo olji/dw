@@ -12,7 +12,7 @@ The amount of words needed depends on configuration parameters such as character
 
 #### List file importing
 In the case of wanting to use a diceware list already on hand, but not in the format _dw_ uses, _dw_ is able to import the list into the format _dw_ prefers.
-It will ask for formatting in the file in order to be able to separate keys from words, this format is written as "k-w", k meaning keys and w meaning words. The current implementation makes "k-w" equivalent to "k-   w" as it breaks as soon as it finds the first character after either k or w, whichever comes first.
+It will ask for formatting in the file in order to be able to separate keys from words, this format is written as "k-w", k meaning keys and w meaning words. The current implementation makes "k-w" equivalent to "k-:a w" as it breaks as soon as it finds the first character after either k or w, whichever comes first.
 
 #### Passphrase generation
 _dw_ is of course able to generate passphrases by using a existing diceware list.
