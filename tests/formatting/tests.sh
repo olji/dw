@@ -2,6 +2,7 @@
 . ../util.sh
 
 rm -f lst-format*.log
+rm -f lst-format*.log.mleak
 
 assert '$BIN --use-list=incomplete.lst -g5' \
     'grep "Not enough entries" $OUTFILE' \

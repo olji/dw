@@ -3,6 +3,7 @@
 . ../util.sh
 
 rm invocation_*.log
+rm invocation_*.log.mleak
 rm invocation_*.lst
 
 PW_ID=[0-9][0-9][0-9][0-9][0-9]
