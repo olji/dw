@@ -19,6 +19,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <argp.h>
 #include <string.h>
 #include <math.h>
@@ -33,7 +34,7 @@
 
 extern struct dw_config CONFIG;
 
-const char *argp_program_version = "dw 1";
+const char *argp_program_version = "dw 1.0.1";
 const char *argp_program_bug_address = "me@rickardjonsson.se";
 
 static char doc[] = "dw - Diceware manager";
@@ -56,7 +57,7 @@ struct arguments {
 };
 
 void generate(struct dw_hashmap*, int);
-void lookup(struct dw_hashmap*);
+void lookup(FILE*, struct dw_hashmap*);
 bool arguments_insert(struct arguments*, int, char*);
 int list_create(FILE*, struct dw_hashmap*);
 bool list_import(FILE*, struct dw_hashmap*);
@@ -365,7 +366,7 @@ int main(int argc, char **argv){
             generate(dw_list, g_length);
             break;
         case LOOK:
-            lookup(dw_list);
+            lookup(NULL, dw_list);
             break;
         default:
             printf("dw_option default case reached, exiting.");
@@ -433,11 +434,39 @@ void generate(struct dw_hashmap *dw_list, int length){
     free(pw_id);
     free(passphrase);
 }
-void lookup(struct dw_hashmap *dw_list){
-    char pw[50];
-    while (scanf("%s", pw) != EOF){
-        char *ret = map_lookup(dw_list, pw);
-        printf("%s\n", ret);
+void lookup(FILE *file, struct dw_hashmap *dw_list){
+    printf("Enter diceware passkeys (Ctrl+d to exit)\n");
+    if (file == NULL){
+        file = stdin;
+    }
+    char c;
+    char *key = str_malloc(0);
+    /* Read input character by character */
+    while (!feof(file)){
+        c = fgetc(file);
+
+        if (strchr(CONFIG.char_set, c) != NULL){
+            str_append(&key, c);
+        }
+        else if (c == '\n' || isblank(c) != 0){
+            if (strlen(key) == CONFIG.key_length){
+                char *word = map_lookup(dw_list, key);
+                printf("---> %s corresponds to %s\n", key, word);
+            } else {
+                error("Length of %s is %zu, length of keys in list are %d.\n", key, strlen(key), CONFIG.key_length);
+            }
+            free(key);
+            key = str_malloc(0);
+
+        } else {
+            do{
+                str_append(&key, c);
+                c = fgetc(file);
+            } while (c != '\n' && isblank(c) == 0);
+            error("Key %s is not valid in current list.\n", key);
+            free(key);
+            key = str_malloc(0);
+        }
     }
 }
 int list_create(FILE *input_file, struct dw_hashmap *dw_list){
