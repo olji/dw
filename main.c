@@ -119,8 +119,8 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
 }
 
 static struct argp_option options[] = {
-    { "generate", 'g', "PASSPHRASE_WORD_COUNT", OPTION_ARG_OPTIONAL, "Generate a passphrase using LIST", 1 },
-    { "lookup", 'l', "DW_NUM", OPTION_ARG_OPTIONAL, "Look up passphrase using LIST", 1 },
+    { "generate", 'g', "WORD_COUNT", OPTION_ARG_OPTIONAL, "Generate a passphrase using LIST", 1 },
+    { "lookup", 'l', "PW_FILE", OPTION_ARG_OPTIONAL, "Look up passphrase using LIST", 1 },
     { "import-list", 'i', "FILE", 0, "Import diceware list named LIST", 0 },
     { "create-list", 'c', "FILE", 0, "Create a new diceware list named LIST", 0 },
     { "use-list", 'u', "LIST", 0, "Use given LIST not present in home directory of dw", 0 },
