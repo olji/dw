@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include "mem.h"
 #include "ioput.h"
 
@@ -23,4 +24,11 @@ void mem_assert(void *pointer){
         error("Allocation error\n");
         exit(1);
     }
+}
+void str_append(char **str, char c){
+    char *tmp = str_malloc(strlen(*str) + 1);
+    strcpy(tmp, *str);
+    tmp[strlen(*str)] = c;
+    free(*str);
+    *str = tmp;
 }
