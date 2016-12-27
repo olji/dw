@@ -444,6 +444,9 @@ void lookup(FILE *file, struct dw_hashmap *dw_list){
     /* Read input character by character */
     while (!feof(file)){
         c = fgetc(file);
+        if (feof(file)){
+            break;
+        }
 
         if (strchr(CONFIG.char_set, c) != NULL){
             str_append(&key, c);
