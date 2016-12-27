@@ -28,7 +28,7 @@
 #include "ioput.h"
 
 #define DEF_LIST "default"
-#define DEF_CHARSET "0123456789"
+#define DEF_CHARSET "123456"
 
 extern struct dw_config CONFIG;
 
