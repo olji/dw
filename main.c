@@ -152,13 +152,19 @@ int main(int argc, char **argv){
         NULL, /* arguments */
     };
     argp_parse (&argp, argc, argv, 0, 0, &input_args);
-    char *home = getenv("DW_HOME");
-    if (home == NULL){
-        note("DW_HOME is not set, assuming ~/.dw/\n");
-        char *usr_home = getenv("HOME");
-        home = str_malloc((strlen(usr_home) + strlen(DEF_HOME)));
-        strcpy(home, usr_home);
-        strcat(home, DEF_HOME);
+    char *home = NULL;
+    {
+        char *dw_home = getenv("DW_HOME");
+        if (dw_home == NULL){
+            note("DW_HOME is not set, assuming ~/.dw/\n");
+            char *usr_home = getenv("HOME");
+            home = str_malloc((strlen(usr_home) + strlen(DEF_HOME)));
+            strcpy(home, usr_home);
+            strcat(home, DEF_HOME);
+        } else {
+            home = str_malloc(strlen(dw_home));
+            strcpy(home, dw_home);
+        }
     }
 
     char *cfg_path;
