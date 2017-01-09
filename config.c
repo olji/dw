@@ -44,6 +44,7 @@ int read_config(char *configpath){
     CONFIG.char_set = str_malloc(strlen(DEF_CHARSET));
     strcpy(CONFIG.char_set, DEF_CHARSET);
     CONFIG.unique = 1;
+    CONFIG.script_friendly = 0;
     CONFIG.word_min_len = 2;
 
     config_t cfg;
@@ -95,6 +96,7 @@ int read_config(char *configpath){
     config_lookup_int(&cfg, "key-length", &CONFIG.key_length);
     config_lookup_int(&cfg, "word-min-length", &CONFIG.word_min_len);
     config_lookup_bool(&cfg, "unique", &CONFIG.unique);
+    config_lookup_bool(&cfg, "script-friendly", &CONFIG.script_friendly);
 
     CONFIG.char_set_size = strlen(CONFIG.char_set);
     CONFIG.map_size = pow(CONFIG.char_set_size, CONFIG.key_length);
@@ -235,6 +237,9 @@ int write_config(config_t *cfg, char *configpath){
     /* Set unique */
     setting = config_setting_add(root, "unique", CONFIG_TYPE_BOOL);
     config_setting_set_bool(setting, CONFIG.unique);
+    /* Set script-friendly */
+    setting = config_setting_add(root, "script-friendly", CONFIG_TYPE_BOOL);
+    config_setting_set_bool(setting, CONFIG.script_friendly);
     /* Set word-min-length */
     setting = config_setting_add(root, "word-min-length", CONFIG_TYPE_INT);
     config_setting_set_int(setting, CONFIG.word_min_len);

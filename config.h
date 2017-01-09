@@ -26,6 +26,7 @@ struct dw_config{
     size_t char_set_size;
     size_t map_size;
     int unique;
+    int script_friendly;
     int word_min_len;
 } CONFIG;
 
