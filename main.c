@@ -460,7 +460,12 @@ void lookup(FILE *file, struct dw_hashmap *dw_list){
         else if (c == '\n' || isblank(c) != 0){
             if (strlen(key) == CONFIG.key_length){
                 char *word = map_lookup(dw_list, key);
-                printf("---> %s corresponds to %s\n", key, word);
+                printf("%s", word);
+                if (isblank(c) != 0){
+                    printf(" ");
+                } else {
+                    printf("\n");
+                }
             } else {
                 error("Length of %s is %zu, length of keys in list are %d.\n", key, strlen(key), CONFIG.key_length);
             }
