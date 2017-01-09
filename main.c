@@ -442,7 +442,9 @@ void generate(struct dw_hashmap *dw_list, int length){
     free(passphrase);
 }
 void lookup(FILE *file, struct dw_hashmap *dw_list){
-    printf("Enter diceware passkeys (Ctrl+d to exit)\n");
+    if (CONFIG.script_friendly == false){
+        printf("Enter diceware passkeys (Ctrl+d to exit)\n");
+    }
     if (file == NULL){
         file = stdin;
     }
