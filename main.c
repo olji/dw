@@ -288,7 +288,7 @@ int main(int argc, char **argv){
             return 1;
         }
         switch (input_args.list_option){
-        case CREATE:;
+        case CREATE:
             exit_status = list_create(input, dw_list);
             if (exit_status < 1){
                 conf_free();
