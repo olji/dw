@@ -243,6 +243,7 @@ int main(int argc, char **argv){
      */
     struct dw_hashmap *dw_list = malloc_assert(sizeof(struct dw_hashmap));
     dw_list->map = NULL;
+    dw_list->gen_key = NULL;
     if (input_args.list_option != LIST_NONE){
         list = fopen(listpath, "r");
         if (list != NULL){

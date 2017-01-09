@@ -41,6 +41,7 @@ struct dw_node{
 
 struct dw_hashmap{
     struct dw_node **map;
+    char *gen_key;
 };
 
 bool map_filled();
