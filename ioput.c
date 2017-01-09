@@ -3,6 +3,9 @@
 #include <string.h>
 #include <ctype.h>
 #include "ioput.h"
+#include "config.h"
+
+extern struct dw_config CONFIG;
 
 void error(char *format, ...){
     va_list args;
@@ -14,13 +17,15 @@ void error(char *format, ...){
     va_end(args);
 }
 void note(char *format, ...){
-    va_list args;
-    printf(NOTE_OUT);
-    printf("NOTE: ");
-    printf(NORMAL_OUT);
-    va_start(args, format);
-    vprintf(format, args);
-    va_end(args);
+    if (CONFIG.script_friendly == 0){
+        va_list args;
+        printf(NOTE_OUT);
+        printf("NOTE: ");
+        printf(NORMAL_OUT);
+        va_start(args, format);
+        vprintf(format, args);
+        va_end(args);
+    }
 }
 void debug(char *format, ...){
 #if DEBUG
