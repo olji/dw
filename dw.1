@@ -1,0 +1,74 @@
+.TH dw 1 "2016-12-23" "dw 1.1" "USER COMMANDS"
+.SH "NAME"
+dw - A simple diceware software
+
+.SH "SYNOPSIS"
+.B dw
+[\fB\-c\fR\fIFILE\fR|\fB\-i\fR\fIFILE\fR]
+[\fB\-g\fR[\fIWORD_COUNT\fR]|\fB\-l\fR[\fIFILE\fR]]
+[\fB\-u\fR\fILIST\fR] [\fB\-U\fR\fICONFIG\fR] [\fILIST\fR]
+
+.SH "DESCRIPTION"
+LIST is either given in command line or supplied through configuration option \fBdefault-list\fR.
+
+The order of given options and LIST should not matter at all.
+.TP
+\-c, \-\-create-list=\fIFILE\fR
+Create a list from the given FILE, this list will be written either to LIST.
+.TP
+\-i, \-\-import-list=\fIFILE\fR
+Parses FILE according to format given by the user when prompted, creating a identical list which is written to LIST.
+.TP
+\-g, \-\-generate[=\fIWORD_COUNT\fR]
+Generates a passphrase using LIST, outputting passphrase and the key in stdout.
+The amount of words in the passphrase is given by WORD_COUNT, or asked for during runtime.
+.TP
+\-l, \-\-lookup[=\fIFILE\fR]
+Uses LIST to find the word that corresponds to keys either found in FILE
+or given through stdin. If FILE is given stdin will not be used.
+.TP
+\-u, \-\-use\-list=\fILIST\fR
+Sets LIST to a path outside of DW_HOME, dw will not try to delete
+existing files when this is used.
+.TP
+\-U, \-\-use\-config=\fICONFIG\fR
+Use the configurations described in CONFIG instead of $DW_HOME/dw.conf.
+If CONFIG does not exist dw will offer to write a default configuration
+to it.
+
+.SH "CONFIGURATION"
+Values inside parentheses shows default value if none is set
+.TP
+.B character-set\fR ('123456')
+The set of characters possible in a "dice roll", can be defined in groups by [09] for 0-9. This feature uses the character position in the ascii table, so [0z] may give more characters than you may intend.
+.TP
+.B key-size\fR (5)
+The amount of characters from the character set needed to identify one word.
+.TP
+.B default-list\fR ('default')
+What list in $DW\_HOME that should be used when _dw_ is executed without a list file supplied.
+.TP
+.B min-word-length\fR (2)
+The minimum length a word needs to be in order to be added to the list, it is recommended to have a length of at least 14 characters, including spaces, for a passphrase of 5 words and 17 characters for 6 words, keeping _min-word-length_ at 2 will make that condition be fulfilled always, setting it to 1 will accept more words, but it is recommended to ensure the passphrase length is good.
+.TP
+.B unique\fR (true)
+If true duplicate words found will be discarded, HIGHLY RECOMMENDED TO BE SET TO TRUE as duplicate words in a list decreases entropy.
+.TP
+.B script-friendly\fR (false)
+Remove unnecessary output from dw to become more manageable in scripts.
+
+.SH "EXAMPLES"
+.TP
+Create a list new_list and generate a passphrase of 5 words from it.
+.B dw \-csrc.txt \-g5 new_list
+.TP
+Lookup 3 keys in some_list.
+.B echo '2312 1235 5343' | dw \-l some_list
+.TP
+Import src_list to list imported_list in path ../imported_list, which is outside of $DW_HOME
+.B dw  \-u../imported_list \-isrc_list
+
+.SH "FILES"
+.TP
+.I $DW_HOME/dw.conf
+Configuration file read by dw if no other is given through \-U
