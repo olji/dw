@@ -31,6 +31,7 @@
 #include "mem.h"
 
 #define DEF_HOME "/.dw/"
+#define BUF_SIZE 128
 
 extern struct dw_config CONFIG;
 
@@ -494,29 +495,50 @@ int list_create(FILE *input_file, struct dw_hashmap *dw_list){
             return 0;
         }
     }
-    fseek(input_file, 0, SEEK_END);
-    int f_size = ftell(input_file);
-    rewind(input_file);
+    FILE *file = input_file;
+    if (file == NULL){
+        file = stdin;
+    }
     dw_list->map = calloc_assert(CONFIG.map_size, sizeof(struct dw_node*));
 
     char *delims = " \n";
-    char *chunk = malloc_assert(f_size);
-    fread(chunk, f_size, 1, input_file);
-    char *str = strtok(chunk, delims);
-    while (str != NULL){
-        if (strlen(str) >= CONFIG.word_min_len){
-            map_insert(dw_list, str);
+    char chunk[BUF_SIZE];
+
+    /* Mmmm... Ugly goto's for now */
+L_CR_READ:
+    while (fgets(chunk, BUF_SIZE, file) != NULL){
+        char *str = strtok(chunk, delims);
+        while (str != NULL){
+            if (strlen(str) >= CONFIG.word_min_len){
+                map_insert(dw_list, str);
+            }
+            if (map_filled(dw_list->gen_key)){
+                /* Hopefully this goto can be removed without too much screwing around */
+                goto L_CR_READ_OUT;
+            }
+            str = strtok(NULL, delims);
         }
-        if (map_filled()){
-            break;
-        }
-        str = strtok(NULL, delims);
     }
-    if (!map_filled()){
+L_CR_READ_OUT:
+    if (!map_filled(dw_list->gen_key) && file != stdin){
+        note("Input file did not give sufficient amount of words to fill, %zu more words are needed. ", map_left(dw_list->gen_key));
+        if (CONFIG.script_friendly == false){
+            char ans = ask("yn","Want to use stdin to supply extra?");
+            if (ans == 'y'){
+                file = stdin;
+                /* This should be removed later, it works for now, which is what's important at this point */
+                goto L_CR_READ;
+            }
+        } else {
+            file = stdin;
+            /* Same like the goto above */
+            goto L_CR_READ;
+        }
+    }
+    if (!map_filled(dw_list->gen_key)){
         error("Could not gather %zu %swords from input file, lower key size, present a file with more %swords or reduce the size of your character set.%s\n", CONFIG.map_size, (CONFIG.unique?"unique ":""), (CONFIG.unique?"unique ":""), (CONFIG.unique?"\nEnabling duplicate words by setting unique_words to false in may result in gathering enough words, but WILL weaken the security of passphrases generated":""));
         return -1;
     }
-    free(chunk);
     return 1;
 }
 bool list_import(FILE *input_file, struct dw_hashmap *dw_list){

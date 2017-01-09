@@ -44,9 +44,14 @@ struct dw_hashmap{
     char *gen_key;
 };
 
-bool map_filled();
+
+bool map_filled(char*);
+size_t map_left(char*);
+
+void init_key(char**);
+char *gen_word_key(struct dw_hashmap*);
+
 int str_hash(char*,int);
-char *gen_word_key();
 
 bool  map_insert(struct dw_hashmap*, char*);
 char *map_lookup(struct dw_hashmap*, char*);

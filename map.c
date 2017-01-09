@@ -25,37 +25,11 @@
 #include "map.h"
 #include "config.h"
 #include "ioput.h"
+#include "mem.h"
 
 extern struct dw_config CONFIG;
 
-static char *key;
-int str_hash(char *word, int modval){
-    size_t pos = 0;
-    for (int i=0; word[i] != '\0'; ++i){
-        word[i] = tolower(word[i]);
-        pos += word[i];
-        pos += pos << 2;
-        pos -= pos >> 3;
-        pos ^= pos << 4;
-    }
-    return pos % modval;
-}
-void init_key(){
-    key = calloc(CONFIG.key_length + 1, sizeof(char));
-    for (int i = 0; i < CONFIG.key_length; ++i){
-        key[i] = CONFIG.char_set[0];
-    }
-}
-bool map_filled(){
-    char *last_key = calloc(CONFIG.key_length + 1, sizeof(char));
-    for (int i = 0; i < CONFIG.key_length; ++i){
-        last_key[i] = CONFIG.char_set[CONFIG.char_set_size-1];
-    }
-    bool retval = (strcmp(key, last_key) == 0);
-    free(last_key);
-    return retval;
-}
-void increment_key(){
+void increment_key(char *key){
     int key_pos = 0;
     for (;;){
         int pos = strchr(CONFIG.char_set, key[key_pos])-CONFIG.char_set;
@@ -71,26 +45,63 @@ void increment_key(){
         }
     }
 }
-char *gen_word_key(){
-    static bool first_run = true;
-    if (first_run){
-        init_key();
-        first_run = false;
-    } else {
-        increment_key();
+int str_hash(char *word, int modval){
+    size_t pos = 0;
+    for (int i=0; word[i] != '\0'; ++i){
+        word[i] = tolower(word[i]);
+        pos += word[i];
+        pos += pos << 2;
+        pos -= pos >> 3;
+        pos ^= pos << 4;
     }
-    return key;
+    return pos % modval;
+}
+void init_key(char **key){
+    (*key) = str_malloc(CONFIG.key_length);
+    for (int i = 0; i < CONFIG.key_length; ++i){
+        (*key)[i] = CONFIG.char_set[0];
+    }
+}
+bool map_filled(char *key){
+    char *last_key = str_malloc(strlen(key));
+    for (int i = 0; i < CONFIG.key_length; ++i){
+        last_key[i] = CONFIG.char_set[CONFIG.char_set_size-1];
+    }
+
+    bool retval = (strcmp(key, last_key) == 0);
+    free(last_key);
+    return retval;
+}
+size_t map_left(char *key){
+    size_t size = 0;
+    char *tmp = str_malloc(strlen(key));
+    strcpy(tmp, key);
+    while(!map_filled(tmp)){
+        increment_key(tmp);
+        ++size;
+    }
+    free(tmp);
+    return size;
+}
+char *gen_word_key(struct dw_hashmap *map){
+    char **key = &map->gen_key;
+    if ((*key) == NULL){
+        init_key(key);
+    } else {
+        increment_key(*key);
+    }
+    return (*key);
 }
 bool map_insert(struct dw_hashmap *map, char *word){
     int pos = str_hash(word, CONFIG.map_size);
     bool uniq = node_unique(map->map[pos], word);
     if (!CONFIG.unique || uniq){
-        char *given_key = gen_word_key();
-        struct dw_node *new = malloc(sizeof(struct dw_node));
+        char *given_key = gen_word_key(map);
+        struct dw_node *new = malloc_assert(sizeof(struct dw_node));
         new->key = pos;
-        new->value.id = malloc(sizeof(char) * (CONFIG.key_length + 1));
+        new->value.id = str_malloc(CONFIG.key_length);
         strcpy(new->value.id, given_key);
-        new->value.value = malloc(sizeof(char) * (strlen(word) + 1));
+        new->value.value = str_malloc(strlen(word));
         strcpy(new->value.value, word);
         new->next = NULL;
         node_insert(&map->map[pos], new);
@@ -149,9 +160,8 @@ void map_free(struct dw_hashmap* map){
         }
     }
     free(map->map);
+    free(map->gen_key);
     free(map);
-    /* dw_hashmap is freed at end, free key as well */
-    free(key);
 }
 void node_write(FILE *fp, struct dw_node *node){
     if (node == NULL){
@@ -177,7 +187,7 @@ void node_rearrange(struct dw_node **map, struct dw_node *node){
     node_insert(&map[node->key], node);
 }
 void map_rearrange(struct dw_hashmap *map){
-    struct dw_node **new_map = calloc(CONFIG.map_size, sizeof(struct dw_node*));
+    struct dw_node **new_map = calloc_assert(CONFIG.map_size, sizeof(struct dw_node*));
     for (int i = 0; i < CONFIG.map_size; ++i){
         if (map->map[i] != NULL){
             node_rearrange(new_map, map->map[i]);
