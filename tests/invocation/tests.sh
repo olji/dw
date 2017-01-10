@@ -6,7 +6,7 @@ rm invocation_*.log
 rm invocation_*.log.mleak
 rm invocation_*.lst
 
-PW_ID=[0-9][0-9][0-9][0-9][0-9]
+PW_ID=[0-9][0-9][0-9][0-9]
 PW_WORD=[a-zA-Z0-9]*
 # Use external list
 assert '$BIN -g5 --use-list=list.lst' \
@@ -38,13 +38,13 @@ assert 'echo "y" | $BIN -g5 --create-list=src.tmp --use-list=invocation_new_list
     'INVOCATION - List create and passphrase generate chaining 3' \
     'invocation_chaining-3.log'
 # Lookup
-assert 'echo "42342 12345 83723" | $BIN --use-list=list.lst --lookup' \
-    'grep "word24324" output' 0 \
+assert 'echo "4342 1345 8723" | $BIN --use-list=list.lst --lookup' \
+    'grep "word2434" output' 0 \
     'INVOCATION - Passphrase lookup' \
     'invocation_lookup.log'
 # Character set usage
 assert 'echo "y" | $BIN --create-list=src.tmp --use-list=invocation_c_set.lst --use-config=c_set.conf' \
-    'grep "ajibe" invocation_c_set.lst' \
+    'grep "ajib" invocation_c_set.lst' \
     0 \
     'INVOCATION - Character set used properly' \
     'invocation_cset.log'

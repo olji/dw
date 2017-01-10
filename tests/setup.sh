@@ -12,7 +12,7 @@ fi
 
 . ./util.sh
 
-ID_L=5
+ID_L=4
 SRC_FILE=src_file.tmp
 LST_FILE=list.lst
 CHAR_S=0123456789
@@ -64,6 +64,6 @@ cp $LST_FILE invocation/list.lst
 cp $SRC_FILE invocation/src.tmp
 cp $SRC_FILE config/src.tmp
 sed '1s/10/15/' list.lst > formatting/charset-len-wrong.lst
-sed 's/word53432//' list.lst > formatting/missing-line-entry.lst
+sed 's/word5432//' list.lst > formatting/missing-line-entry.lst
 
 cd $CWD
