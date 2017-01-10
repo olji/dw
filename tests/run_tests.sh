@@ -4,15 +4,16 @@
 CWD=`pwd`
 
 echo
-if [[ $CWD != *"tests/" ]] ; then
-    cd tests/
+if [[ ! $CWD =~ tests ]] ; then
+    cd tests
     if [[ $? -eq 1 ]] ; then
         echo "Could not move to subdirectory tests, are you not in project directory?"
+        exit 1
     fi
 fi
 
 SETUP=$1
-if [[ $SETUP -eq 1 ]]; then
+if [ ! -z $SETUP ] || [ ! -e src_file.tmp ]; then
 	sh setup.sh
 fi
 
