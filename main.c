@@ -73,7 +73,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
         arguments->dw_option = GEN;
         if (arg != NULL){
             for (int i = 0; i < strlen(arg); ++i){
-                if (arg[i] < '0' || arg[i] > '9'){
+                if (!isdigit(arg[i])){
                     error("Optional parameter to -g (--generate) should only be integers\n");
                     exit(1);
                 }
