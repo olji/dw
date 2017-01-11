@@ -148,7 +148,7 @@ int main(int argc, char **argv){
         DW_NONE, /* dw_option */
         false, /* ext_list */
         false, /* ext_cfg */
-        "default", /* list_file */
+        NULL, /* list_file */
         "dw.conf", /* cfg_file */
         NULL, /* arguments */
     };
