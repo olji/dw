@@ -602,15 +602,11 @@ bool list_import(FILE *input_file, struct dw_hashmap *dw_list){
     dw_list->map = calloc_assert(map_size, sizeof(struct dw_node*));
     for (int i = 0; i < result_amount; ++i){
         struct dw_node *new = malloc_assert(sizeof(struct dw_node));
-        new->value.id = str_malloc(key_size);
-        new->value.value = str_malloc(strlen(all_results[i][1]));
-        strcpy(new->value.value, all_results[i][1]);
-        strcpy(new->value.id, all_results[i][0]);
+        new->value.id = all_results[i][0];
+        new->value.value = all_results[i][1];
         new->key = str_hash(all_results[i][0], map_size);
         new->next = NULL;
         node_insert(&(dw_list->map[new->key]), new);
-        free(all_results[i][0]);
-        free(all_results[i][1]);
         free(all_results[i]);
     }
     free(format);
