@@ -585,13 +585,10 @@ bool list_import(FILE *input_file, struct dw_hashmap *dw_list){
         }
         all_results = tmp;
         all_results[result_amount-1] = result;
+
         for(int i = 0; i < strlen(result[0]); ++i){
             if (strchr(char_set, result[0][i]) == NULL){
-                char *tmp = str_malloc(strlen(char_set) + 1);
-                strcpy(tmp, char_set);
-                tmp[strlen(char_set)] = result[0][i];
-                free(char_set);
-                char_set = tmp;
+                str_append(&char_set, result[0][i]);
             }
         }
     } while ((string = strtok(NULL, "\n")) != NULL);
