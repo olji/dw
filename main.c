@@ -226,15 +226,18 @@ int main(int argc, char **argv){
     char *input_file;
     int g_length = 0;
 
-    struct arg_pair *node = input_args.arguments;
-    while (node != NULL){
-        if (node->type == INPUT_FILE){
-            input_file = node->value;
-        } else if (node->type == PP_LENGTH){
-            char* end;
-            g_length = (int)strtol(node->value, &end, 10);
+    {
+        struct arg_pair *node = input_args.arguments;
+        /* Parse eventual option arguments passed */
+        while (node != NULL){
+            if (node->type == INPUT_FILE){
+                input_file = node->value;
+            } else if (node->type == PP_LENGTH){
+                char* end;
+                g_length = (int)strtol(node->value, &end, 10);
+            }
+            node = node->next;
         }
-        node = node->next;
     }
     FILE *list;
 
