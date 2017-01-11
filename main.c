@@ -422,18 +422,16 @@ void generate(struct dw_hashmap *dw_list, int length){
         strcat(pw_id, " ");
 
         char *found_word = map_lookup(dw_list, id);
-        char *word_copy = str_malloc(strlen(found_word));
-        strcpy(word_copy, found_word);
 
         /* Add byte for space character */
-        char *tmp_pw = str_malloc(strlen(passphrase) + strlen(word_copy) + 1);
+        char *tmp_pw = str_malloc(strlen(passphrase) + strlen(found_word) + 1);
+        /* Append new word to passphrase */
         strcpy(tmp_pw, passphrase);
         if (tmp_pw[0] != '\0'){
             strcat(tmp_pw, " ");
         }
-        strcat(tmp_pw, word_copy);
+        strcat(tmp_pw, found_word);
         free(passphrase);
-        free(word_copy);
         passphrase = tmp_pw;
     }
     printf("Passphrase: %s\n", passphrase);
