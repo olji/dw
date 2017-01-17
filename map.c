@@ -20,7 +20,6 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
-#include <math.h>
 
 #include "map.h"
 #include "config.h"

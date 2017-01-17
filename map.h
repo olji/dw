@@ -19,8 +19,6 @@
 #ifndef MAP_H
 #define MAP_H
 #include <stdbool.h>
-#include <math.h>
-#include <string.h>
 
 /* 
  * Key is identifier for the value, 
