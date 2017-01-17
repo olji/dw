@@ -143,7 +143,6 @@ int main(int argc, char **argv){
     printf("DEBUG IS ON\n===================\n");
 #endif
     if (argc < 2){
-        printf("No function asked for.\n\n");
         argp_help(&argp, stdout, ARGP_HELP_SHORT_USAGE, "dw");
         argp_help(&argp, stdout, ARGP_HELP_LONG, "dw");
         return 0;
