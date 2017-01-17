@@ -17,6 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with dw.  If not, see <http://www.gnu.org/licenses/>.
  */
+/* TODO: Add optional gpgme support */
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -42,6 +43,7 @@ static char doc[] = "dw - Diceware manager";
 
 static char args_doc[] = "[LIST]";
 
+/* Linked list structure for keeping track of several option arguments */
 struct arg_pair {
     enum {NONE = 0, INPUT_FILE, PP_LENGTH} type;
     char *value;
@@ -60,6 +62,7 @@ struct arguments {
 void generate(struct dw_hashmap*, int);
 void lookup(FILE*, struct dw_hashmap*);
 bool arguments_insert(struct arguments*, int, char*);
+/* Returns <0 if error, 0 if unsuccessful but nothing fatal, 1 if successful */
 int list_create(FILE*, struct dw_hashmap*);
 bool list_import(FILE*, struct dw_hashmap*);
 bool list_parse(FILE*, struct dw_hashmap*);
@@ -67,11 +70,13 @@ char **parse_key_word(char*, char*);
 void args_free(struct arg_pair*);
 
 static error_t parse_opt (int key, char *arg, struct argp_state *state){
+    /* TODO: Error message if conflicting options are chosen (Such as both --generate and --lookup */
     struct arguments *arguments = state->input;
     switch (key){
     case 'g':
         arguments->dw_option = GEN;
         if (arg != NULL){
+            /* Make sure only integers */
             for (int i = 0; i < strlen(arg); ++i){
                 if (!isdigit(arg[i])){
                     error("Optional parameter to -g (--generate) should only be integers\n");
@@ -133,6 +138,7 @@ static struct argp_option options[] = {
 static struct argp argp = {options, parse_opt, args_doc, doc};
 
 int main(int argc, char **argv){
+    /* TODO: Cleaner way of cleanup (Wrapper to free to set pointer to null if freed, and not try to free if null?) */
 #if DEBUG == 1
     printf("DEBUG IS ON\n===================\n");
 #endif
@@ -155,6 +161,7 @@ int main(int argc, char **argv){
     argp_parse (&argp, argc, argv, 0, 0, &input_args);
     char *home = NULL;
     {
+        /* Set home to DW_HOME if set, otherwise default */
         char *dw_home = getenv("DW_HOME");
         if (dw_home == NULL){
             note("DW_HOME is not set, assuming ~/.dw/\n");
@@ -168,6 +175,7 @@ int main(int argc, char **argv){
         }
     }
 
+    /* Set config path according to home, or value supplied by option -U */
     char *cfg_path;
     if (input_args.ext_cfg){
         cfg_path = input_args.cfg;
@@ -195,6 +203,7 @@ int main(int argc, char **argv){
     }
 
     if (input_args.list == NULL){
+        /* Set default list if possible or exit */
         printf("Using default list...\n");
         if (CONFIG.default_list != NULL){
             input_args.list = str_malloc(strlen(CONFIG.default_list));
@@ -213,6 +222,7 @@ int main(int argc, char **argv){
 
     debug("List file used: %s\n", input_args.list);
     char *listpath;
+    /* Set list path */
     if (input_args.ext_list){
         listpath = str_malloc(strlen(input_args.list));
         strcpy(listpath, input_args.list);
@@ -247,12 +257,17 @@ int main(int argc, char **argv){
      */
     struct dw_hashmap *dw_list = malloc_assert(sizeof(struct dw_hashmap));
     dw_list->map = NULL;
+    /* Gen key will be allocated upon first call to map_insert() */
     dw_list->gen_key = NULL;
     if (input_args.list_option != LIST_NONE){
+        /* Necessary preparation for list creation options (--create, --import) */
+
+        /* Does file open? Does it exist? */
         list = fopen(listpath, "r");
         if (list != NULL){
             fclose(list);
             if (input_args.ext_list){
+                /* Don't prompt for removal outside home, files will not necessarily "belong" to dw */
                 error("File already exists, will not delete files outside %s\n", home);
                 conf_free();
                 args_free(input_args.arguments);
@@ -264,6 +279,7 @@ int main(int argc, char **argv){
                 }
                 return 1;
             }
+            /* If in home, chances are dw created them. (Malicious removal using dw is just stupid, works, but stupid) */
             char ans = ask("yn", "File already exists: %s, delete?", listpath);
             if (ans == 'y'){
                 remove(listpath);
@@ -279,6 +295,7 @@ int main(int argc, char **argv){
                 return 1;
             }
         }
+
         FILE *input = fopen(input_file, "r");
         if (input == NULL){
             error("Could not open input file %s\n", input_file);
@@ -292,6 +309,7 @@ int main(int argc, char **argv){
             }
             return 1;
         }
+        /* Perform chosen option */
         switch (input_args.list_option){
         case CREATE:
             exit_status = list_create(input, dw_list);
@@ -333,6 +351,7 @@ int main(int argc, char **argv){
             return 2;
         }
         fclose(input);
+        /* Write list to file */
         list = fopen(listpath, "wx");
         map_write(list, dw_list);
         fclose(list);
@@ -340,6 +359,7 @@ int main(int argc, char **argv){
 
     if (input_args.dw_option != DW_NONE){
         if (input_args.list_option == LIST_NONE){
+            /* If --create nor --import has been used, dw_list will be free */
             list = fopen(listpath, "r");
             if (list == NULL){
                 error("Failed to open list %s for reading.\n", listpath);
@@ -369,14 +389,17 @@ int main(int argc, char **argv){
                 return 1;
             }
         } else {
+            /* If they have been used the list is already in memory, just some rearrangements needed */
             map_rearrange(dw_list);
         }
 
+        /* Call function asked for */
         switch (input_args.dw_option){
         case GEN:
             generate(dw_list, g_length);
             break;
         case LOOK:
+            /* TODO: Pass file pointer if file given */
             lookup(NULL, dw_list);
             break;
         default:
@@ -412,12 +435,17 @@ void generate(struct dw_hashmap *dw_list, int length){
             scanf("%d", &length);
         } while (length <= 0);
     }
+    /* One key */
     char *id = str_malloc(CONFIG.key_length);
     srand(time(NULL));
+    /* Passphrase itself */
     char *passphrase = str_malloc(0);
+    /* Whole string of keys
+     * Calloc pw_id for simpler concatenation inside loop */
     char *pw_id = calloc_assert((length*CONFIG.key_length) + length + 1, sizeof(char));
 
     for (int i = 0; i < length; ++i){
+        /* Add random character to id n times, where n is length of id*/
         for (int j = 0; j < CONFIG.key_length; ++j){
             id[j] = CONFIG.char_set[rand()%CONFIG.char_set_size];
         }
@@ -459,9 +487,11 @@ void lookup(FILE *file, struct dw_hashmap *dw_list){
             break;
         }
 
+        /* Add to key if character exist in character set */
         if (strchr(CONFIG.char_set, c) != NULL){
             str_append(&key, c);
         }
+        /* If blank or newline, verify key length and lookup word to print */
         else if (c == '\n' || isblank(c) != 0){
             if (strlen(key) == CONFIG.key_length){
                 char *word = map_lookup(dw_list, key);
@@ -478,6 +508,8 @@ void lookup(FILE *file, struct dw_hashmap *dw_list){
             key = str_malloc(0);
 
         } else {
+            /* If unsupported character (Not defined in character set),
+             * read until blank or newline to remove rest of unusable key */
             do{
                 str_append(&key, c);
                 c = fgetc(file);
@@ -507,8 +539,11 @@ int list_create(FILE *input_file, struct dw_hashmap *dw_list){
 
     /* Mmmm... Ugly goto's for now */
 L_CR_READ:
+    /* BUF_SIZE needs to be same between to list creations if one want to recreate a list */
     while (fgets(chunk, BUF_SIZE, file) != NULL){
         char *str = strtok(chunk, delims);
+        /* Add every supplied word to dw_list if equal to or larger than
+         * CONFIG.word_min_len, exit prematurely if list is filled */
         while (str != NULL){
             if (strlen(str) >= CONFIG.word_min_len){
                 map_insert(dw_list, str);
@@ -521,6 +556,8 @@ L_CR_READ:
         }
     }
 L_CR_READ_OUT:
+    /* Not being filled at this point means all input has been used, show
+     * amount of words still needed and propose use of stdin instead */
     if (!map_filled(dw_list->gen_key) && file != stdin){
         note("Input file did not give sufficient amount of words to fill, %zu more words are needed. ", map_left(dw_list->gen_key));
         if (CONFIG.script_friendly == false){
@@ -536,6 +573,7 @@ L_CR_READ_OUT:
             goto L_CR_READ;
         }
     }
+    /* Still not filled means use of stdin wasn't wanted, exit with error */
     if (!map_filled(dw_list->gen_key)){
         error("Could not gather %zu %swords from input file, lower key size, present a file with more %swords or reduce the size of your character set.%s\n", CONFIG.map_size, (CONFIG.unique?"unique ":""), (CONFIG.unique?"unique ":""), (CONFIG.unique?"\nEnabling duplicate words by setting unique_words to false in may result in gathering enough words, but WILL weaken the security of passphrases generated":""));
         return -1;
@@ -543,9 +581,10 @@ L_CR_READ_OUT:
     return 1;
 }
 bool list_import(FILE *input_file, struct dw_hashmap *dw_list){
-    printf("Enter format of key-word pairs (E.g. k:w for key followed by word, separated by colon): ");
+    printf("Enter format of key-word pairs, k being key and w being word (E.g. k:w for key followed by word, separated by colon): ");
     char c = 0;
     char *format = str_malloc(0);
+    /* Prompt for format */
     while (c != '\n' && c != EOF){
         c = fgetc(stdin);
         char *tmp = str_malloc(strlen(format) + 1);
@@ -555,20 +594,31 @@ bool list_import(FILE *input_file, struct dw_hashmap *dw_list){
         format = tmp;
     }
     debug("format: %s\n", format);
+
+    /* List should be imported, meaning stdin is not needed.
+     * Thus read whole file */
     fseek(input_file, 0, SEEK_END);
     int f_size = ftell(input_file);
     rewind(input_file);
 
     char *chunk = str_malloc(f_size);
     fread(chunk, f_size, 1, input_file);
+
     char *string = NULL;
     char *char_set = str_malloc(0);
     size_t key_size = 0, map_size = 0, result_amount = 0;
-    /* First pass, needed to ensure full character set */
+
+    /* Currently works as specified below, but perhaps later rewritten to
+     * a struct format for better readability overall */
+    /* Level 0: Every key-word pair */
+    /* Level 1: One specific key-word pair, 0 being key, 1 being word */
+    /* Level 2: Value */
     char ***all_results = NULL;
     string = strtok(chunk, "\n");
+    /* First pass, needed to ensure full character set */
     do{
         char **result = parse_key_word(format, string);
+        /* Key_size should be the same, any changes means list is possibly faulty */
         if (key_size == 0){
             key_size = strlen(result[0]);
         } else if (key_size != strlen(result[0])){
@@ -576,7 +626,7 @@ bool list_import(FILE *input_file, struct dw_hashmap *dw_list){
             return false;
         }
 
-
+        /* Key was (presumably) proper, allocate space for another key-word pair */
         ++result_amount;
         char ***tmp = realloc(all_results, sizeof(char**) * result_amount);
         if (tmp == NULL){
@@ -586,21 +636,30 @@ bool list_import(FILE *input_file, struct dw_hashmap *dw_list){
         all_results = tmp;
         all_results[result_amount-1] = result;
 
+        /* For each character in key... */
         for(int i = 0; i < strlen(result[0]); ++i){
+            /* Append character to character set if it is not found there */
             if (strchr(char_set, result[0][i]) == NULL){
                 str_append(&char_set, result[0][i]);
             }
         }
     } while ((string = strtok(NULL, "\n")) != NULL);
+
     sort(char_set);
     map_size = pow(strlen(char_set), key_size);
     free(CONFIG.char_set);
+
+    /* Set configuration, only one instance of dw_hashmap should exist,
+     * but having separate members stored in the struct itself might be nicer */
     CONFIG.char_set = char_set;
     CONFIG.map_size = map_size;
     CONFIG.key_length = key_size;
     CONFIG.char_set_size = strlen(char_set);
+
     dw_list->map = calloc_assert(map_size, sizeof(struct dw_node*));
+
     for (int i = 0; i < result_amount; ++i){
+        /* Convert char*** structure to dw_list */
         struct dw_node *new = malloc_assert(sizeof(struct dw_node));
         new->value.id = all_results[i][0];
         new->value.value = all_results[i][1];
@@ -615,10 +674,12 @@ bool list_import(FILE *input_file, struct dw_hashmap *dw_list){
     return true;
 }
 bool list_parse(FILE *list, struct dw_hashmap *dw_list){
+    /* Get filesize */
     fseek(list, 0, SEEK_END);
     int f_size = ftell(list);
     rewind(list);
 
+    /* Read full file */
     char *chunk = str_malloc(f_size);
     fread(chunk, f_size, 1, list);
     char *str = strtok(chunk, "\n");
@@ -626,6 +687,7 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
     size_t key_size = 0, charset_size = 0;
     debug("chunk: %s, f_size: %d, chunk_part: %s\n", chunk, f_size, str);
 
+    /* First line is keysize and character set size, separated with hyphen */
     sscanf(str, "%zu-%zu", &key_size, &charset_size);
     if (key_size == 0 || charset_size == 0){
         error("Missing information about key size or character set length\n");
@@ -636,6 +698,7 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
     char *charset = str_malloc(charset_size);
     const int map_size = pow(charset_size, key_size);
 
+    /* Second line is character set */
     str = strtok(NULL, "\n");
     sscanf(str, "%s", charset);
 
@@ -648,6 +711,10 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
 
     free(CONFIG.char_set);
 
+    /* Rest of the lines should all be list entries */
+
+    /* Set configuration, only one instance of dw_hashmap should exist,
+     * but having separate members stored in the struct itself might be nicer */
     CONFIG.key_length = key_size;
     CONFIG.char_set = str_malloc(strlen(charset));
     strcpy(CONFIG.char_set, charset);
@@ -663,6 +730,7 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
             debug("Progress: %d%%\n",i/(map_size/100));
         }
 #endif
+        /* Key is followed by space */
         str = strtok(NULL, " ");
         if (str == NULL){
             error("Not enough entries present?\nIteration %d of %d\n", i, map_size);
@@ -675,18 +743,18 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
         }
         char key[key_size];
         strcpy(key, str);
+        /* Word is followed by newline (Theoretically will support phrases
+         * in list I guess , but shouldn't happen if dw has generated the list) */
         str = strtok(NULL, "\n");
         if (str == NULL){
             error("Word missing from entry.\nIteration %d of %d\n", i, map_size);
             return false;
         }
-        /*
-         * Since str should be formatted as 'key word', removing the key
-         * length from the string should give the length of the word, null terminator included.
-         */
+
         char *word = str_malloc(strlen(str));
         strcpy(word, str);
 
+        /* Does key contain only characters in character set? */
         size_t p = strcspn(key, CONFIG.char_set);
         if (p != 0){
             error("Key %s is not valid in charset %s\n", key, CONFIG.char_set);
@@ -696,6 +764,7 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
             return false;
         }
 
+        /* Create node and insert */
         struct dw_node *new = malloc_assert(sizeof(struct dw_node));
         new->value.id = str_malloc(key_size);
         new->value.value = str_malloc(strlen(word));
@@ -712,12 +781,14 @@ bool list_parse(FILE *list, struct dw_hashmap *dw_list){
     return true;
 }
 bool arguments_insert(struct arguments *arguments, int type, char *arg){
+    /* Create pair */
     struct arg_pair *new = malloc_assert(sizeof(struct arg_pair));
     new->type = type;
     new->value = str_malloc(strlen(arg));
     strcpy(new->value, arg);
     new->next = NULL;
 
+    /* Insert */
     struct arg_pair *node = arguments->arguments;
     if (node != NULL){
         while (node->next != NULL){
@@ -738,29 +809,37 @@ void args_free(struct arg_pair *node){
 }
 char **parse_key_word(char *format, char *string){
     enum kwmode{NONE = 0, KEY, WORD} mode = NONE;
+    /* Key-word pair */
     char **key_word = malloc_assert(sizeof(char*) * 2);
     int mode_start = 0;
 
+    /* i for moving across format string, j to move across input string */
     for (int i = 0, j = 0; i < strlen(format); ++i){
+        /* Switch between parsing key and word */
         if (format[i] == 'k'){
             mode = KEY;
         } else if (format[i] == 'w'){
             mode = WORD;
         } else {
+            /* If separator, the start of the next key or word will be the next character */
             mode_start = ++j;
             mode = NONE;
         }
         switch (mode){
         case KEY:
-            /* format[i] should contain the delimiter at this point if not passed already */
+            /* Find the end of the key,
+             * format[i+1] should contain the delimiter at this point if not passed already */
             for (; (string[j] != format[i+1] && j <= strlen(string)); ++j);
             key_word[0] = str_malloc(j - mode_start);
+            /* Copy (j - mode_start) characters starting from mode_start */
             strncpy(key_word[0], &string[mode_start], j - mode_start);
             break;
         case WORD:
-            /* format[i] should contain the delimiter at this point if not passed already */
+            /* Find the end of the word,
+             * format[i+1] should contain the delimiter at this point if not passed already */
             for (; (string[j] != format[i+1] && j <= strlen(string)); ++j);
             key_word[1] = str_malloc(j - mode_start);
+            /* Copy (j - mode_start) characters starting from mode_start */
             strncpy(key_word[1], &string[mode_start], j - mode_start);
             break;
         case NONE:

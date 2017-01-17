@@ -47,6 +47,7 @@ int read_config(char *configpath){
     CONFIG.script_friendly = 0;
     CONFIG.word_min_len = 2;
 
+    /* libconfig setup */
     config_t cfg;
     config_init(&cfg);
 
@@ -76,6 +77,8 @@ int read_config(char *configpath){
         }
     }
 
+    /* Most of this is self explanatory, read value using config_lookup_x(),
+     * free any strings which should already be allocated with default value */
     const char *charset_string;
     const char *def_list_string;
     if (config_lookup_string(&cfg, "default-list", &def_list_string)){

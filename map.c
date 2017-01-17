@@ -32,20 +32,27 @@ extern struct dw_config CONFIG;
 void increment_key(char *key){
     int key_pos = 0;
     for (;;){
+        /* Get key[key_pos]'s position in character set */
         int pos = strchr(CONFIG.char_set, key[key_pos])-CONFIG.char_set;
+        /* If lower than character set size, increment the character */
         if (pos < CONFIG.char_set_size - 1){
             key[key_pos] = CONFIG.char_set[pos+1];
             break;
         } else {
+            /* Otherwise, set character to the first character in
+             * character set and start looking at the next character in key */
             key[key_pos] = CONFIG.char_set[0];
             ++key_pos;
             if (key_pos > CONFIG.key_length){
+                /* If key_pos is larger than key length, no more keys can be gotten */
                 break;
             }
         }
     }
 }
 int str_hash(char *word, int modval){
+    /* Take the sum of each character in the
+     * word and screw around with it a bit */
     size_t pos = 0;
     for (int i=0; word[i] != '\0'; ++i){
         word[i] = tolower(word[i]);
@@ -58,12 +65,15 @@ int str_hash(char *word, int modval){
 }
 void init_key(char **key){
     (*key) = str_malloc(CONFIG.key_length);
+    /* Fill with first character in character set */
+    /* TODO: Change loop to memset */
     for (int i = 0; i < CONFIG.key_length; ++i){
         (*key)[i] = CONFIG.char_set[0];
     }
 }
 bool map_filled(char *key){
     char *last_key = str_malloc(strlen(key));
+    /* TODO: Change loop to memset */
     for (int i = 0; i < CONFIG.key_length; ++i){
         last_key[i] = CONFIG.char_set[CONFIG.char_set_size-1];
     }
@@ -76,6 +86,7 @@ size_t map_left(char *key){
     size_t size = 0;
     char *tmp = str_malloc(strlen(key));
     strcpy(tmp, key);
+    /* Keep track of how many times tmp has to be incremented to be seen as full */
     while(!map_filled(tmp)){
         increment_key(tmp);
         ++size;
@@ -84,6 +95,7 @@ size_t map_left(char *key){
     return size;
 }
 char *gen_word_key(struct dw_hashmap *map){
+    /* Initialise key if needed */
     char **key = &map->gen_key;
     if ((*key) == NULL){
         init_key(key);
@@ -96,6 +108,8 @@ bool map_insert(struct dw_hashmap *map, char *word){
     int pos = str_hash(word, CONFIG.map_size);
     bool uniq = node_unique(map->map[pos], word);
     if (!CONFIG.unique || uniq){
+        /* Create node and insert if word is unique
+         * or dw configured to not care about that */
         char *given_key = gen_word_key(map);
         struct dw_node *new = malloc_assert(sizeof(struct dw_node));
         new->key = pos;
@@ -110,6 +124,8 @@ bool map_insert(struct dw_hashmap *map, char *word){
     return uniq;
 }
 bool node_unique(struct dw_node *node, char *str){
+    /* Follow linked list if word not matched,
+     * NULL means unique to that specific list */
     if (node == NULL){
         return true;
     } 
@@ -119,6 +135,8 @@ bool node_unique(struct dw_node *node, char *str){
     return node_unique(node->next, str);
 }
 void node_insert(struct dw_node **node, struct dw_node *new_node){
+    /* Get to end of list and insert */
+    /* TODO: Insert at start instead of end */
     if (*node == NULL){
         *node = new_node;
     } else {
@@ -126,6 +144,7 @@ void node_insert(struct dw_node **node, struct dw_node *new_node){
     }
 }
 char *node_lookup(struct dw_node *node, char *id){
+    /* Move through list until id is found, return empty string if not found */
     if (node == NULL){
         return "";
     }
@@ -142,15 +161,18 @@ char *map_lookup(struct dw_hashmap *map, char *id){
     return ret;
 }
 void node_free(struct dw_node* node){
+    /* Move to end of list and start freeing */
     if (node == NULL){
         return;
     }
     node_free(node->next);
+
     free(node->value.id);
     free(node->value.value);
     free(node->next);
 }
 void map_free(struct dw_hashmap* map){
+    /* Free each linked list in map */
     if (map->map != NULL){
         for (int i = 0; i < CONFIG.map_size; ++i){
             if (map->map[i] != NULL){
@@ -159,6 +181,7 @@ void map_free(struct dw_hashmap* map){
             }
         }
     }
+
     free(map->map);
     free(map->gen_key);
     free(map);
@@ -171,6 +194,7 @@ void node_write(FILE *fp, struct dw_node *node){
     node_write(fp, node->next);
 }
 void map_write(FILE *fp, struct dw_hashmap *map){
+    /* Write list information, then all nodes */
     fprintf(fp, "%zu-%zu\n", (size_t)CONFIG.key_length, CONFIG.char_set_size);
     fprintf(fp, "%s\n", CONFIG.char_set);
     for (int i = 0; i < CONFIG.map_size; ++i){
@@ -178,6 +202,8 @@ void map_write(FILE *fp, struct dw_hashmap *map){
     }
 }
 void node_rearrange(struct dw_node **map, struct dw_node *node){
+    /* Generate and import only knows keys and uses hashed keys,
+     * move to end, change hash to hashed key instead of word, then insert */
     if (node == NULL){
         return;
     }
@@ -187,12 +213,14 @@ void node_rearrange(struct dw_node **map, struct dw_node *node){
     node_insert(&map[node->key], node);
 }
 void map_rearrange(struct dw_hashmap *map){
+    /* Create new map to insert nodes to */
     struct dw_node **new_map = calloc_assert(CONFIG.map_size, sizeof(struct dw_node*));
     for (int i = 0; i < CONFIG.map_size; ++i){
         if (map->map[i] != NULL){
             node_rearrange(new_map, map->map[i]);
         }
     }
+    /* Replace old, empty map with new map */
     free(map->map);
     map->map = new_map;
 }

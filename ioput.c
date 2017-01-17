@@ -7,6 +7,7 @@
 
 extern struct dw_config CONFIG;
 
+/* Most are simple wrappers using va_list */
 void error(char *format, ...){
     va_list args;
     fprintf(stderr, ERROR_OUT);
@@ -39,6 +40,7 @@ void debug(char *format, ...){
 #endif
 }
 
+/* Output format, read input and only accept characters found in answers */
 char ask(char *answers, char *format, ...){
     va_list args;
     va_start(args, format);
