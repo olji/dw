@@ -10,8 +10,6 @@ release: main.c
 	gcc $(CFLAGS) $(SRC_OBJS) $(LIBS) -o dw
 test: debug
 	sh tests/run_tests.sh $(SETUP)
-install: release
-	cp dw /bin/dw
 clean:
 	rm -f dw
 	find . -name '*.log' -type f -delete
