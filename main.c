@@ -738,7 +738,7 @@ void args_free(struct arg_pair *node){
 }
 char **parse_key_word(char *format, char *string){
     enum kwmode{NONE = 0, KEY, WORD} mode = NONE;
-    char **key_word = malloc(sizeof(char*) * 2);
+    char **key_word = malloc_assert(sizeof(char*) * 2);
     int mode_start = 0;
 
     for (int i = 0, j = 0; i < strlen(format); ++i){
@@ -754,16 +754,14 @@ char **parse_key_word(char *format, char *string){
         case KEY:
             /* format[i] should contain the delimiter at this point if not passed already */
             for (; (string[j] != format[i+1] && j <= strlen(string)); ++j);
-            key_word[0] = malloc(sizeof(char) * (j - mode_start + 1));
+            key_word[0] = str_malloc(j - mode_start);
             strncpy(key_word[0], &string[mode_start], j - mode_start);
-            key_word[0][j - mode_start] = '\0';
             break;
         case WORD:
             /* format[i] should contain the delimiter at this point if not passed already */
             for (; (string[j] != format[i+1] && j <= strlen(string)); ++j);
-            key_word[1] = malloc(sizeof(char) * (j - mode_start + 1));
+            key_word[1] = str_malloc(j - mode_start);
             strncpy(key_word[1], &string[mode_start], j - mode_start);
-            key_word[1][j - mode_start] = '\0';
             break;
         case NONE:
         default:
