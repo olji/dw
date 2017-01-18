@@ -415,9 +415,7 @@ int main(int argc, char **argv){
         }
     }
 
-    if (input_args.ext_list){
-        free(input_args.list);
-    }
+    free(input_args.list);
     free(home);
     free(listpath);
     map_free(dw_list);
