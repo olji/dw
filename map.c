@@ -128,13 +128,10 @@ bool node_unique(struct dw_node *node, char *str){
     return node_unique(node->next, str);
 }
 void node_insert(struct dw_node **node, struct dw_node *new_node){
-    /* Get to end of list and insert */
-    /* TODO: Insert at start instead of end */
-    if (*node == NULL){
-        *node = new_node;
-    } else {
-        node_insert(&(*node)->next, new_node);
-    }
+    /* Insert node at start of linked list */
+    struct dw_node *next = *node;
+    new_node->next = next;
+    *node = new_node;
 }
 char *node_lookup(struct dw_node *node, char *id){
     /* Move through list until id is found, return empty string if not found */
