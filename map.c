@@ -65,17 +65,11 @@ int str_hash(char *word, int modval){
 void init_key(char **key){
     (*key) = str_malloc(CONFIG.key_length);
     /* Fill with first character in character set */
-    /* TODO: Change loop to memset */
-    for (int i = 0; i < CONFIG.key_length; ++i){
-        (*key)[i] = CONFIG.char_set[0];
-    }
+    memset(*key, CONFIG.char_set[0], CONFIG.key_length);
 }
 bool map_filled(char *key){
     char *last_key = str_malloc(strlen(key));
-    /* TODO: Change loop to memset */
-    for (int i = 0; i < CONFIG.key_length; ++i){
-        last_key[i] = CONFIG.char_set[CONFIG.char_set_size-1];
-    }
+    memset(last_key, CONFIG.char_set[CONFIG.char_set_size-1], CONFIG.key_length);
 
     bool retval = (strcmp(key, last_key) == 0);
     free(last_key);
