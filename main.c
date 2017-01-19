@@ -113,7 +113,8 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state){
     case ARGP_KEY_ARG:
         /* Check for going upwards in directories or starting from root */
         if (strstr(arg, "..") == NULL && arg[0] != '/'){
-            arguments->list = arg;
+            arguments->list = str_malloc(strlen(arg));
+            strcpy(arguments->list, arg);
         } else {
             error("List files outside of dw home directory should be supplied with -u\n");
             exit(1);
@@ -212,9 +213,6 @@ int main(int argc, char **argv){
             conf_free();
             args_free(input_args.arguments);
             free(home);
-            if (input_args.ext_list){
-                free(input_args.list);
-            }
             return 1;
         }
     }
@@ -230,6 +228,7 @@ int main(int argc, char **argv){
         strcpy(listpath, home);
         strcat(listpath, input_args.list);
     }
+    free(input_args.list);
     debug("Listpath: %s\n", listpath);
 
     char *input_file;
@@ -273,9 +272,6 @@ int main(int argc, char **argv){
                 free(home);
                 free(listpath);
                 map_free(dw_list);
-                if (input_args.ext_list){
-                    free(input_args.list);
-                }
                 return 1;
             }
             /* If in home, chances are dw created them. (Malicious removal using dw is just stupid, works, but stupid) */
@@ -288,9 +284,6 @@ int main(int argc, char **argv){
                 free(home);
                 free(listpath);
                 map_free(dw_list);
-                if (input_args.ext_list){
-                    free(input_args.list);
-                }
                 return 1;
             }
         }
@@ -303,9 +296,6 @@ int main(int argc, char **argv){
             free(home);
             free(listpath);
             map_free(dw_list);
-            if (input_args.ext_list){
-                free(input_args.list);
-            }
             return 1;
         }
         /* Perform chosen option */
@@ -318,9 +308,6 @@ int main(int argc, char **argv){
                 free(home);
                 free(listpath);
                 map_free(dw_list);
-                if (input_args.ext_list){
-                    free(input_args.list);
-                }
                 return abs(exit_status);
             }
             break;
@@ -331,9 +318,6 @@ int main(int argc, char **argv){
                 free(home);
                 free(listpath);
                 map_free(dw_list);
-                if (input_args.ext_list){
-                    free(input_args.list);
-                }
                 return 1;
             }
             break;
@@ -344,9 +328,6 @@ int main(int argc, char **argv){
             free(home);
             free(listpath);
             map_free(dw_list);
-            if (input_args.ext_list){
-                free(input_args.list);
-            }
             return 2;
         }
         fclose(input);
@@ -367,9 +348,6 @@ int main(int argc, char **argv){
                 free(home);
                 free(listpath);
                 map_free(dw_list);
-                if (input_args.ext_list){
-                    free(input_args.list);
-                }
                 return 1;
             }
             debug("Opened: %s\n", listpath);
@@ -382,9 +360,6 @@ int main(int argc, char **argv){
                 map_free(dw_list);
                 args_free(input_args.arguments);
                 conf_free();
-                if (input_args.ext_list){
-                    free(input_args.list);
-                }
                 return 1;
             }
         } else {
@@ -408,14 +383,10 @@ int main(int argc, char **argv){
             free(home);
             free(listpath);
             map_free(dw_list);
-            if (input_args.ext_list){
-                free(input_args.list);
-            }
             return 2;
         }
     }
 
-    free(input_args.list);
     free(home);
     free(listpath);
     map_free(dw_list);
