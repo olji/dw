@@ -148,6 +148,7 @@ int main(int argc, char **argv){
         argp_help(&argp, stdout, ARGP_HELP_LONG, "dw");
         return 0;
     }
+    int retval = 0;
 
     struct arguments input_args = {
         LIST_NONE, /* list_option */
@@ -193,13 +194,11 @@ int main(int argc, char **argv){
      */
     free(cfg_path);
     if (exit_status < 1){
-        conf_free();
-        args_free(input_args.arguments);
-        free(home);
         if (input_args.ext_list){
             free(input_args.list);
         }
-        return abs(exit_status);
+        retval = abs(exit_status);
+        goto CL_CONF;
     }
 
     if (input_args.list == NULL){
@@ -210,10 +209,8 @@ int main(int argc, char **argv){
             strcpy(input_args.list, CONFIG.default_list);
         } else {
             error("default list not set, set default list in configuration or provide list name manually\n");
-            conf_free();
-            args_free(input_args.arguments);
-            free(home);
-            return 1;
+            retval = 1;
+            goto CL_CONF;
         }
     }
 
@@ -267,68 +264,45 @@ int main(int argc, char **argv){
             if (input_args.ext_list){
                 /* Don't prompt for removal outside home, files will not necessarily "belong" to dw */
                 error("File already exists, will not delete files outside %s\n", home);
-                conf_free();
-                args_free(input_args.arguments);
-                free(home);
-                free(listpath);
-                map_free(dw_list);
-                return 1;
+                retval = 1;
+                goto CL_MAP;
             }
             /* If in home, chances are dw created them. (Malicious removal using dw is just stupid, works, but stupid) */
             char ans = ask("yn", "File already exists: %s, delete?", listpath);
             if (ans == 'y'){
                 remove(listpath);
             } else {
-                conf_free();
-                args_free(input_args.arguments);
-                free(home);
-                free(listpath);
-                map_free(dw_list);
-                return 1;
+                retval = 1;
+                goto CL_MAP;
             }
         }
 
         FILE *input = fopen(input_file, "r");
         if (input == NULL){
             error("Could not open input file %s\n", input_file);
-            conf_free();
-            args_free(input_args.arguments);
-            free(home);
-            free(listpath);
-            map_free(dw_list);
-            return 1;
+
+            retval = 1;
+            goto CL_MAP;
         }
         /* Perform chosen option */
         switch (input_args.list_option){
         case CREATE:
             exit_status = list_create(input, dw_list);
             if (exit_status < 1){
-                conf_free();
-                args_free(input_args.arguments);
-                free(home);
-                free(listpath);
-                map_free(dw_list);
-                return abs(exit_status);
+                retval = abs(exit_status);
+                goto CL_MAP;
             }
             break;
         case IMPORT:
             if (!list_import(input, dw_list)){
-                conf_free();
-                args_free(input_args.arguments);
-                free(home);
-                free(listpath);
-                map_free(dw_list);
-                return 1;
+                retval = 1;
+                goto CL_MAP;
             }
             break;
         default:
             printf("list_option default case reached, exiting.\n");
-            conf_free();
-            args_free(input_args.arguments);
-            free(home);
-            free(listpath);
-            map_free(dw_list);
-            return 2;
+            retval = 2;
+            goto CL_MAP;
         }
         fclose(input);
         /* Write list to file */
@@ -343,24 +317,16 @@ int main(int argc, char **argv){
             list = fopen(listpath, "r");
             if (list == NULL){
                 error("Failed to open list %s for reading.\n", listpath);
-                conf_free();
-                args_free(input_args.arguments);
-                free(home);
-                free(listpath);
-                map_free(dw_list);
-                return 1;
+                retval = 1;
+                goto CL_MAP;
             }
             debug("Opened: %s\n", listpath);
-            bool ret = list_parse(list, dw_list);
+            bool ret = list_parse(list, dw_list, ctx);
             fclose(list);
             if (!ret){
                 printf("Exiting...\n");
-                free(home);
-                free(listpath);
-                map_free(dw_list);
-                args_free(input_args.arguments);
-                conf_free();
-                return 1;
+                retval = 1;
+                goto CL_MAP;
             }
         } else {
             /* If they have been used the list is already in memory, just some rearrangements needed */
@@ -378,21 +344,19 @@ int main(int argc, char **argv){
             break;
         default:
             printf("dw_option default case reached, exiting.");
-            conf_free();
-            args_free(input_args.arguments);
-            free(home);
-            free(listpath);
-            map_free(dw_list);
-            return 2;
+            retval = 2;
+            goto CL_MAP;
         }
     }
 
-    free(home);
-    free(listpath);
+CL_MAP:
     map_free(dw_list);
-    args_free(input_args.arguments);
+    free(listpath);
+CL_CONF:
     conf_free();
-    return 0;
+    free(home);
+    args_free(input_args.arguments);
+    return retval;
 }
 
 void generate(struct dw_hashmap *dw_list, int length){
