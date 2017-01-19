@@ -204,7 +204,7 @@ int main(int argc, char **argv){
 
     if (input_args.list == NULL){
         /* Set default list if possible or exit */
-        printf("Using default list...\n");
+        note("Using default list...\n");
         if (CONFIG.default_list != NULL){
             input_args.list = str_malloc(strlen(CONFIG.default_list));
             strcpy(input_args.list, CONFIG.default_list);
