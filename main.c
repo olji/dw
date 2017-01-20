@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with dw.  If not, see <http://www.gnu.org/licenses/>.
  */
-/* TODO: Add optional gpgme support */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -25,6 +25,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <gpgme.h>
 
 #include "map.h"
 #include "config.h"
@@ -36,7 +37,7 @@
 
 extern struct dw_config CONFIG;
 
-const char *argp_program_version = "dw 1.1";
+const char *argp_program_version = "dw 1.2";
 const char *argp_program_bug_address = "me@rickardjonsson.se";
 
 static char doc[] = "dw - Diceware manager";
@@ -65,7 +66,7 @@ bool arguments_insert(struct arguments*, int, char*);
 /* Returns <0 if error, 0 if unsuccessful but nothing fatal, 1 if successful */
 int list_create(FILE*, struct dw_hashmap*);
 bool list_import(FILE*, struct dw_hashmap*);
-bool list_parse(FILE*, struct dw_hashmap*);
+bool list_parse(FILE*, struct dw_hashmap*, gpgme_ctx_t);
 char **parse_key_word(char*, char*);
 void args_free(struct arg_pair*);
 
@@ -174,6 +175,20 @@ int main(int argc, char **argv){
             home = str_malloc(strlen(dw_home));
             strcpy(home, dw_home);
         }
+    }
+
+    /* Setup GPGME */
+    gpgme_error_t gpgme_error;
+    gpgme_ctx_t ctx;
+    gpgme_check_version(NULL);
+    gpgme_error = gpgme_new(&ctx);
+    if (gpgme_error != GPG_ERR_NO_ERROR){
+        error("GPGME ERROR: %s\n", gpgme_strerror(gpgme_error));
+        if (input_args.ext_list){
+            free(input_args.list);
+        }
+        retval = 1;
+        goto CL_GPGME;
     }
 
     /* Set config path according to home, or value supplied by option -U */
@@ -305,10 +320,52 @@ int main(int argc, char **argv){
             goto CL_MAP;
         }
         fclose(input);
-        /* Write list to file */
+
+        char *list_buffer = map_to_string(dw_list);
+
         list = fopen(listpath, "wx");
-        map_write(list, dw_list);
+        /* Call gpgme::encrypt on list_buffer */
+        if (CONFIG.use_gpg == true){
+            gpgme_data_t in;
+            gpgme_data_t out;
+            gpgme_key_t key;
+            gpgme_key_t rcpt[2];
+
+            gpgme_error = gpgme_get_key(ctx, CONFIG.gpg_key_id, &key, false);
+            if (key == NULL){
+                error("%d-%d\n", gpgme_err_code(gpgme_error), GPG_ERR_INV_VALUE);
+                error("GPGME Error when getting key %s: %s\n", CONFIG.gpg_key_id, gpgme_strerror(gpgme_error));
+                exit(1);
+            }
+            rcpt[0] = key;
+            rcpt[1] = NULL;
+            gpgme_error = gpgme_data_new_from_mem(&in, list_buffer, strlen(list_buffer), 0);
+            if (gpgme_error != GPG_ERR_NO_ERROR){
+                error("GPG ERROR: %s\n", gpgme_strerror(gpgme_error));
+                retval = 1;
+                goto CL_MAP;
+            }
+            gpgme_data_new_from_stream(&out, list);
+            if (gpgme_error != GPG_ERR_NO_ERROR){
+                error("GPG ERROR: %s\n", gpgme_strerror(gpgme_error));
+                retval = 1;
+                goto CL_MAP;
+            }
+
+            gpgme_op_encrypt(ctx, rcpt, GPGME_ENCRYPT_ALWAYS_TRUST, in, out);
+            if (gpgme_error != GPG_ERR_NO_ERROR){
+                error("GPG ERROR: %s\n", gpgme_strerror(gpgme_error));
+                retval = 1;
+                goto CL_MAP;
+            }
+            gpgme_data_release(in);
+            gpgme_key_release(key);
+            gpgme_data_release(out);
+        } else {
+            fprintf(list, "%s", list_buffer);
+        }
         fclose(list);
+        free(list_buffer);
     }
 
     if (input_args.dw_option != DW_NONE){
@@ -354,6 +411,8 @@ CL_MAP:
     free(listpath);
 CL_CONF:
     conf_free();
+CL_GPGME:
+    gpgme_release(ctx);
     free(home);
     args_free(input_args.arguments);
     return retval;
@@ -605,19 +664,44 @@ bool list_import(FILE *input_file, struct dw_hashmap *dw_list){
     free(chunk);
     return true;
 }
-bool list_parse(FILE *list, struct dw_hashmap *dw_list){
+bool list_parse(FILE *list, struct dw_hashmap *dw_list, gpgme_ctx_t gpgme_ctx){
     /* Get filesize */
     fseek(list, 0, SEEK_END);
     int f_size = ftell(list);
     rewind(list);
+    char *chunk = NULL;
 
+    gpgme_data_t gpg_enc_file_data;
+    gpgme_data_t gpg_file_data;
+    gpgme_error_t gpgme_error;
+    gpgme_data_new_from_stream(&gpg_enc_file_data, list);
+    gpgme_data_new(&gpg_file_data);
+    gpgme_error = gpgme_op_decrypt(gpgme_ctx, gpg_enc_file_data, gpg_file_data);
+    debug("f_size: %d\n", f_size);
+
+    if (strcmp(gpgme_strerror(gpgme_error), "No data") == 0){
+        /* File was not gpg encrypted */
+        rewind(list);
+        chunk = str_malloc(f_size);
+        fread(chunk, f_size, 1, list);
+    } else if (gpgme_error == GPG_ERR_NO_ERROR){
+        /* File was gpg encrypted */
+        int length = gpgme_data_seek(gpg_file_data, 0, SEEK_END);
+        gpgme_data_seek(gpg_file_data, 0, SEEK_SET);
+        debug("length: %d\n", length);
+        chunk = str_malloc(length);
+        gpgme_data_read(gpg_file_data, chunk, length);
+    } else {
+        error("GPGME error: %s\n", gpgme_strerror(gpgme_error));
+        return false;
+    }
+    gpgme_data_release(gpg_enc_file_data);
+    gpgme_data_release(gpg_file_data);
     /* Read full file */
-    char *chunk = str_malloc(f_size);
-    fread(chunk, f_size, 1, list);
     char *str = strtok(chunk, "\n");
 
     size_t key_size = 0, charset_size = 0;
-    debug("chunk: %s, f_size: %d, chunk_part: %s\n", chunk, f_size, str);
+    debug("chunk: %s, chunk_part: %s\n", chunk, str);
 
     /* First line is keysize and character set size, separated with hyphen */
     sscanf(str, "%zu-%zu", &key_size, &charset_size);

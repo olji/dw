@@ -28,6 +28,8 @@ struct dw_config{
     int unique;
     int script_friendly;
     int word_min_len;
+    int use_gpg;
+    char *gpg_key_id;
 } CONFIG;
 
 int read_config(char*);

@@ -46,6 +46,8 @@ int read_config(char *configpath){
     CONFIG.unique = 1;
     CONFIG.script_friendly = 0;
     CONFIG.word_min_len = 2;
+    CONFIG.gpg_key_id = "";
+    CONFIG.use_gpg = 0;
 
     /* libconfig setup */
     config_t cfg;
@@ -81,10 +83,15 @@ int read_config(char *configpath){
      * free any strings which should already be allocated with default value */
     const char *charset_string;
     const char *def_list_string;
+    const char *gpg_key_id;
     if (config_lookup_string(&cfg, "default-list", &def_list_string)){
         free(CONFIG.default_list);
         CONFIG.default_list = str_malloc(strlen(def_list_string));
         strcpy(CONFIG.default_list, def_list_string);
+    }
+    if (config_lookup_string(&cfg, "gpg-key", &gpg_key_id)){
+        CONFIG.gpg_key_id = str_malloc(strlen(gpg_key_id));
+        strcpy(CONFIG.gpg_key_id, gpg_key_id);
     }
     if (config_lookup_string(&cfg, "character-set", &charset_string)){
         char *full_character_set = expand_string(charset_string);
@@ -100,6 +107,7 @@ int read_config(char *configpath){
     config_lookup_int(&cfg, "word-min-length", &CONFIG.word_min_len);
     config_lookup_bool(&cfg, "unique", &CONFIG.unique);
     config_lookup_bool(&cfg, "script-friendly", &CONFIG.script_friendly);
+    config_lookup_bool(&cfg, "use-gpg", &CONFIG.use_gpg);
 
     CONFIG.char_set_size = strlen(CONFIG.char_set);
     CONFIG.map_size = pow(CONFIG.char_set_size, CONFIG.key_length);
@@ -246,6 +254,12 @@ int write_config(config_t *cfg, char *configpath){
     /* Set word-min-length */
     setting = config_setting_add(root, "word-min-length", CONFIG_TYPE_INT);
     config_setting_set_int(setting, CONFIG.word_min_len);
+    /* Set use-gpg */
+    setting = config_setting_add(root, "use-gpg", CONFIG_TYPE_BOOL);
+    config_setting_set_bool(setting, CONFIG.use_gpg);
+    /* Set gpg-key */
+    setting = config_setting_add(root, "gpg-key", CONFIG_TYPE_STRING);
+    config_setting_set_string(setting, CONFIG.gpg_key_id);
     if (!config_write_file(cfg, configpath)){
         error("Could not write default configuration to file '%s'", configpath);
         config_destroy(cfg);

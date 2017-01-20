@@ -1,6 +1,6 @@
 CFLAGS=-Wall -pedantic -Werror
 SRC_OBJS=$(wildcard *.c)
-LIBS=-lm -lconfig
+LIBS=-lm -lconfig -lgpgme
 DEBUG=1
 CVARS= -DDEBUG=$(DEBUG)
 .PHONY= clean
