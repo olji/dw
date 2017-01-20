@@ -57,6 +57,7 @@ void  map_free(struct dw_hashmap*);
 void  map_write(FILE*, struct dw_hashmap*);
 void  map_print(struct dw_hashmap *table);
 void  map_rearrange(struct dw_hashmap*);
+char *map_to_string(struct dw_hashmap*);
 
 void  node_insert(struct dw_node**, struct dw_node*);
 void  node_write(FILE*, struct dw_node*);
@@ -66,5 +67,6 @@ void  node_free(struct dw_node*);
 bool  node_unique(struct dw_node*, char*);
 char *node_lookup(struct dw_node*, char*);
 void  node_rearrange(struct dw_node**, struct dw_node*);
+void node_to_string(char**, struct dw_node*);
 
 #endif

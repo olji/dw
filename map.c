@@ -215,6 +215,76 @@ void map_rearrange(struct dw_hashmap *map){
     map->map = new_map;
 }
 
+void node_to_string(char **str, struct dw_node *node){
+    if (node == NULL){
+        return;
+    }
+    if (*str == NULL){
+        *str = str_malloc(0);
+    }
+
+    /* +3 for space and newline and nullchar */
+    char *tmp = realloc(*str, sizeof(char) * (strlen(*str) + strlen(node->value.id) + strlen(node->value.value) + 3));
+    if (tmp == NULL){
+        error("Error on reallocation!\n");
+        return;
+    }
+    *str = tmp;
+    strcat(*str, node->value.id);
+    strcat(*str, " ");
+    strcat(*str, node->value.value);
+    strcat(*str, "\n");
+    node_to_string(str, node->next);
+}
+char *map_to_string(struct dw_hashmap *list){
+    /* Pretty much digits = strlen(CONFIG.key_length) */
+    int digits = 0;
+    {
+        int tmp = CONFIG.key_length;
+
+        while (tmp != 0){
+            tmp /= 10;
+            ++digits;
+        }
+    }
+
+    /* +2 for hyphen and newline */
+    char *str = str_malloc(digits + CONFIG.char_set_size + 2);
+
+    sprintf(str, "%zu-%zu\n", (size_t)CONFIG.key_length, CONFIG.char_set_size);
+
+    {
+        /* Add char_set and newline (+2 for newline and nullchar) */
+        char *tmp = realloc(str, sizeof(char) * (strlen(str) + CONFIG.char_set_size + 2));
+        if (tmp == NULL){
+            error("Error on reallocation!\n");
+            return NULL;
+        }
+        str = tmp;
+    }
+
+    strcat(str, CONFIG.char_set);
+    strcat(str, "\n");
+
+    char *ll_str = NULL;
+    for (int i = 0; i < CONFIG.map_size; ++i){
+        node_to_string(&ll_str, list->map[i]);
+
+        if (ll_str != NULL){
+            /* +1 for nullchar */
+            char *tmp = realloc(str, sizeof(char) * (strlen(str) + strlen(ll_str) + 1));
+            if (tmp == NULL){
+                error("Error on reallocation!\n");
+                return NULL;
+            }
+            str = tmp;
+            strcat(str, ll_str);
+            free(ll_str);
+            ll_str = NULL;
+        }
+    }
+    return str;
+}
 /* 
  * Mainly used for debugging purposes, may prove useful 
  * for other things however 
