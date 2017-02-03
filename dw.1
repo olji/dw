@@ -56,7 +56,12 @@ If true duplicate words found will be discarded, HIGHLY RECOMMENDED TO BE SET TO
 .TP
 .B script-friendly\fR (false)
 Remove unnecessary output from dw to become more manageable in scripts.
-
+.TP
+.B use-gpg\fR (false)
+Encrypt created lists using key specified by \fBgpg-key\fR.
+.TP
+.B gpg-key\fR (<empty>)
+Key id used for gpg actions.
 .SH "EXAMPLES"
 .TP
 Create a list new_list and generate a passphrase of 5 words from it.

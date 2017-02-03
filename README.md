@@ -40,5 +40,11 @@ __min-word-length__: The minimum length a word needs to be in order to be added 
 
 __unique__: If true duplicate words found will be discarded, _HIGHLY RECOMMENDED TO BE SET TO TRUE_ as duplicate words in a list decreases entropy. _(default: true)_
 
+__use-gpg__: Encrypt created lists using key specified by __gpg-key__. _(default: false)_
+
+__gpg-key__
+Key id used for gpg actions. _(default: empty)_
+
 ### Dependencies
-- libconfig (>= 1.5-3, probably lower is possible)
+- libconfig (>= 1.5, lower probably is possible)
+- gpgme (>= 1.7, lower probably possible)
